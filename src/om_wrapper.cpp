@@ -14,13 +14,13 @@ OMWrapper<OMWT_MATHEMATICA>::OMWrapper(const std::string &mathNamespace, MLINK &
 {
 }
 
-void OMWrapper<OMWT_MATHEMATICA>::RunFunction(std::function<void(void)> &&fun)
+void OMWrapper<OMWT_MATHEMATICA>::RunFunction(std::function<void(OMWrapper<OMWT_MATHEMATICA>&)> &&fun)
 {
     try
     {
         currentParamIdx = 0;
 
-        fun();
+        fun(*this);
     }
     catch (std::runtime_error &ex)
     {

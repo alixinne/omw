@@ -9,18 +9,47 @@
  */
 enum OMWrapperType {
 #if OMW_MATHEMATICA
-    OMWT_MATHEMATICA,
+    OMWT_MATHEMATICA = 2,
 #endif
 #if OMW_OCTAVE
-    OMWT_OCTAVE,
+    OMWT_OCTAVE = 3,
 #endif
+};
+
+template<OMWrapperType WType>
+class OMWrapperBase {
+public:
+    static constexpr const OMWrapperType WrapperType = WType;
+
+private:
+    template<typename TWrapper, class Enable = void>
+    struct ResultSender {
+        void operator()(std::function<void(void)> &&fun) {}
+    };
+
+    template<typename TWrapper>
+    struct ResultSender<TWrapper, typename std::enable_if<(TWrapper::WrapperType == WrapperType)>::type>
+    {
+        void operator()(std::function<void(void)> &&fun) {
+            fun();
+        }
+    };
+
+public:
+    /**
+     * Executes the given code to return the result of the computation.
+     */
+    template<typename TWrapper>
+    void SendResult(std::function<void(void)> &&fun) {
+        ResultSender<TWrapper>()(std::forward<std::function<void(void)>>(fun));
+    }
 };
 
 /**
  * Template definition for wrapper objects
  */
 template<OMWrapperType WType>
-class OMWrapper {
+class OMWrapper : public OMWrapperBase<WType> {
 };
 
 #if OMW_MATHEMATICA
@@ -31,7 +60,7 @@ class OMWrapper {
  * Represents the interface wrapper for Mathematica (MathLink) code.
  */
 template<>
-class OMWrapper<OMWT_MATHEMATICA> {
+class OMWrapper<OMWT_MATHEMATICA> : public OMWrapperBase<OMWT_MATHEMATICA> {
     /// Id of the next parameter to be retrieved
     size_t currentParamIdx;
     /// Reference to the link object to use
@@ -64,7 +93,7 @@ public:
      * wrapper.
      * @param fun Function to invoke when the link is ready.
      */
-    void RunFunction(std::function<void(void)> &&fun);
+    void RunFunction(std::function<void(OMWrapper<OMWT_MATHEMATICA>&)> &&fun);
 
 private:
     /**
