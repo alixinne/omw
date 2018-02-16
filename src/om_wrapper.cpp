@@ -1,6 +1,7 @@
 #include <limits>
 #include <sstream>
 #include <cstring>
+#include <memory>
 
 #include "om_wrapper.h"
 
@@ -68,6 +69,11 @@ bool OMWrapper<OMWT_MATHEMATICA>::GetParam<bool>(size_t paramIdx, const std::str
         throw std::runtime_error(ss.str());
     }
 
+    // will delete afterwards
+    std::shared_ptr<const char> pSymbol(paramSymbol, [this](const char *p) {
+        MLReleaseSymbol(link, p);
+    });
+
     currentParamIdx++;
 
     if (std::strcmp(paramSymbol, "True") == 0)
@@ -82,12 +88,9 @@ bool OMWrapper<OMWT_MATHEMATICA>::GetParam<bool>(size_t paramIdx, const std::str
     {
         std::stringstream ss;
         ss << "Unknown symbol " << paramSymbol << " for parameter " << paramName << " at index " << paramIdx;
-        MLReleaseSymbol(link, paramSymbol);
-
         throw std::runtime_error(ss.str());
     }
 
-    MLReleaseSymbol(link, paramSymbol);
     return paramValue;
 }
 
