@@ -88,6 +88,9 @@ bool OMWrapper<OMWT_MATHEMATICA>::GetParam<bool>(size_t paramIdx, const std::str
 template<>
 int OMWrapper<OMWT_MATHEMATICA>::GetParam<int>(size_t paramIdx, const std::string &paramName);
 
+template<>
+float OMWrapper<OMWT_MATHEMATICA>::GetParam<float>(size_t paramIdx, const std::string &paramName);
+
 #endif /* OMW_MATHEMATICA */
 
 #endif /* _OM_WRAPPER_H_ */

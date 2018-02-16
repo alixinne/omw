@@ -111,6 +111,26 @@ int OMWrapper<OMWT_MATHEMATICA>::GetParam<int>(size_t paramIdx, const std::strin
     return paramValue;
 }
 
+template<>
+float OMWrapper<OMWT_MATHEMATICA>::GetParam<float>(size_t paramIdx, const std::string &paramName)
+{
+    CheckParameterIdx(paramIdx, paramName);
+
+    float paramValue;
+    if (!MLGetReal32(link, &paramValue))
+    {
+        MLClearError(link);
+
+        std::stringstream ss;
+        ss << "Failed to get float for parameter " << paramName << " at index " << paramIdx;
+        throw std::runtime_error(ss.str());
+    }
+
+    currentParamIdx++;
+
+    return paramValue;
+}
+
 #if OMW_INCLUDE_MAIN
 
 int omw_main(int argc, char *argv[])
