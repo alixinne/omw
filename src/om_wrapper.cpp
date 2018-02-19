@@ -190,6 +190,7 @@ OMWrapper<OMWT_MATHEMATICA>::GetParam<std::shared_ptr<OMArray<float>>>(size_t pa
 	std::shared_ptr<OMArray<float>> arrayPtr(new OMArray<float>(arrayData, arrayLen),
 											 [this](OMArray<float> *p) {
 												 MLReleaseReal32List(link, p->data(), p->size());
+												 delete p;
 											 });
 
 	return arrayPtr;
@@ -223,6 +224,7 @@ OMWrapper<OMWT_MATHEMATICA>::GetParam<std::shared_ptr<OMMatrix<float>>>(size_t p
 											   [this](OMMatrix<float> *p) {
 												   MLReleaseReal32Array(link, p->data(), p->dims(),
 																		p->heads(), p->depth());
+												   delete p;
 											   });
 
 	return matrixPtr;
