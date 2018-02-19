@@ -7,8 +7,10 @@
 
 #if OMW_MATHEMATICA
 
-OMWrapper<OMWT_MATHEMATICA>::OMWrapper(const std::string &mathNamespace, MLINK &link)
-    : currentParamIdx(std::numeric_limits<size_t>::max()),
+OMWrapper<OMWT_MATHEMATICA>::OMWrapper(const std::string &mathNamespace, MLINK &link,
+	std::function<void(void)> &&userInitializer)
+    : OMWrapperBase(std::forward<std::function<void(void)>>(userInitializer)),
+	  currentParamIdx(std::numeric_limits<size_t>::max()),
       link(link),
       mathNamespace(mathNamespace)
 {

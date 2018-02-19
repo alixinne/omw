@@ -36,6 +36,22 @@ private:
     };
 
 public:
+	/**
+	 * Initializes a new instance of the base wrapper class.
+	 */
+	OMWrapperBase() {}
+
+	/**
+	 * Initializes a new instance of the base wrapper class.
+	 * @param userInitializer User-defined initialization function to invoke
+	 *                        when the wrapper is constructed.
+	 */
+	OMWrapperBase(std::function<void(void)> &&userInitializer) {
+		if (userInitializer) {
+			userInitializer();
+		}
+	}
+
     /**
      * Executes the given code to return the result of the computation.
      */
@@ -71,10 +87,12 @@ class OMWrapper<OMWT_MATHEMATICA> : public OMWrapperBase<OMWT_MATHEMATICA> {
 public:
     /**
      * Constructs a new Mathematica interface wrapper
-     * @param mathNamespace Name of the namespace where symbols and messages are defined
-     * @param link          Link object to use to communicate with the Kernel
+     * @param mathNamespace   Name of the namespace where symbols and messages are defined
+     * @param link            Link object to use to communicate with the Kernel
+	 * @param userInitializer User initialization function.
      */
-    OMWrapper(const std::string &mathNamespace, MLINK &link);
+    OMWrapper(const std::string &mathNamespace, MLINK &link,
+		std::function<void(void)> &&userInitializer = std::function<void(void)>());
 
     /**
      * Obtains the value of a given parameter.
