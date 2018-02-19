@@ -155,7 +155,7 @@ std::string OMWrapper<OMWT_MATHEMATICA>::GetParam<std::string>(size_t paramIdx, 
 	currentParamIdx++;
 
 	std::string paramResult(paramValue);
-	MLReleaseString(paramValue);
+	MLReleaseString(link, paramValue);
 
 	return paramResult;
 }
@@ -199,7 +199,7 @@ std::shared_ptr<OMMatrix<float>> OMWrapper<OMWT_MATHEMATICA>::GetParam<std::shar
     int arrayDepth;
     char **arrayHeads;
 
-    if (!MLGetReal32Array(link, &data, &dims, &heads, &d))
+    if (!MLGetReal32Array(link, &arrayData, &arrayDims, &arrayHeads, &arrayDepth))
     {
         MLClearError(link);
 
