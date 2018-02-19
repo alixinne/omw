@@ -89,6 +89,8 @@ template <OMWrapperType WType> class OMWrapperBase
 		void operator()(std::function<void(void)> &&fun) { fun(); }
 	};
 
+	std::function<void(void)> userInitializer;
+
 	public:
 	/**
 	 * Initializes a new instance of the base wrapper class.
@@ -96,10 +98,19 @@ template <OMWrapperType WType> class OMWrapperBase
 	 *                        when the wrapper is constructed.
 	 */
 	OMWrapperBase(std::function<void(void)> &&userInitializer)
+	: userInitializer(std::forward<std::function<void(void)>>(userInitializer))
+	{
+	}
+
+	/**
+	 * Ensures the user initialization routine has been called.
+	 */
+	void CheckInitialization()
 	{
 		if (userInitializer)
 		{
 			userInitializer();
+			userInitializer = std::function<void(void)>();
 		}
 	}
 
