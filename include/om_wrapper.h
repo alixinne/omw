@@ -230,12 +230,6 @@ template <> class OMWrapper<OMWT_MATHEMATICA> : public OMWrapperBase<OMWT_MATHEM
 		}
 	}
 
-	template <class... Types, std::size_t... I>
-	decltype(auto) GetTupleParamImpl(size_t paramIdx, const std::string &paramName, std::index_sequence<I...>)
-	{
-		return std::tuple<Types...>{GetParam<Types>(paramIdx + I, paramName)...};
-	}
-
 	template <class... Types, typename Indices = std::make_index_sequence<sizeof...(Types)>,
 		typename = typename std::enable_if<(sizeof...(Types) > 1)>::type>
 	std::tuple<Types...> GetParam(size_t firstParamIdx, const std::string &paramName)
@@ -295,6 +289,15 @@ template <> class OMWrapper<OMWT_MATHEMATICA> : public OMWrapperBase<OMWT_MATHEM
 	 * @throws std::runtime_error See GetParam for details.
 	 */
 	void CheckParameterIdx(size_t paramIdx, const std::string &paramName);
+
+	/**
+	 * Implementation of GetTupleParam variadic template function
+	 */
+	template <class... Types, std::size_t... I>
+	decltype(auto) GetTupleParamImpl(size_t paramIdx, const std::string &paramName, std::index_sequence<I...>)
+	{
+		return std::tuple<Types...>{GetParam<Types>(paramIdx + I, paramName)...};
+	}
 };
 
 template <>
