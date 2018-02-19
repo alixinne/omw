@@ -166,7 +166,8 @@ template <> class OMWrapper<OMWT_MATHEMATICA> : public OMWrapperBase<OMWT_MATHEM
 	 * @throws std::runtime_error When the current parameter index does not match
 	 * the ordinal index of this parameter, or the value is not of the expected type.
 	 */
-	template <typename T> T GetParam(size_t paramIdx, const std::string &paramName);
+	template <class... Types, typename Indices = void, typename = typename std::enable_if<(sizeof...(Types) == 1)>::type>
+	typename std::tuple_element<0, std::tuple<Types...>>::type GetParam(size_t paramIdx, const std::string &paramName);
 
 	/**
 	 * Obtains the value of a given parameter. If the value returned on the link
@@ -235,8 +236,9 @@ template <> class OMWrapper<OMWT_MATHEMATICA> : public OMWrapperBase<OMWT_MATHEM
 		return std::tuple<Types...>{GetParam<Types>(paramIdx + I, paramName)...};
 	}
 
-	template <class... Types, typename Indices = std::make_index_sequence<sizeof...(Types)>>
-	std::tuple<Types...> GetTupleParam(size_t firstParamIdx, const std::string &paramName)
+	template <class... Types, typename Indices = std::make_index_sequence<sizeof...(Types)>,
+		typename = typename std::enable_if<(sizeof...(Types) > 1)>::type>
+	std::tuple<Types...> GetParam(size_t firstParamIdx, const std::string &paramName)
 	{
 		// Check first parameter location
 		CheckParameterIdx(firstParamIdx, paramName);
