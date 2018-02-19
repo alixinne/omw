@@ -264,3 +264,183 @@ int main(int argc, char *argv[]) { return omw_main(argc, argv); }
 #endif /* OMW_INCLUDE_MAIN */
 
 #endif /* OMW_MATHEMATICA */
+
+#if OMW_OCTAVE
+
+
+OMWrapper<OMWT_OCTAVE>::OMWrapper(std::function<void(void)> userInitializer)
+: OMWrapperBase(std::forward<std::function<void(void)>>(userInitializer)),
+  currentArgs(),
+  result()
+{
+}
+
+void OMWrapper<OMWT_OCTAVE>::CheckParameterIdx(size_t paramIdx, const std::string &paramName)
+{
+	if ((*currentArgs).length() <= paramIdx)
+	{
+		std::stringstream ss;
+		ss << "Requested parameter " << paramName << " at index " << paramIdx
+		   << "but there is not enough parameters";
+		throw std::runtime_error(ss.str());
+	}
+}
+
+octave_value_list OMWrapper<OMWT_OCTAVE>::RunFunction(const octave_value_list &args, std::function<void(OMWrapper<OMWT_OCTAVE> &)> fun)
+{
+	try
+	{
+		currentArgs = &args;
+		result = octave_value_list();
+
+		fun(*this);
+	}
+	catch (std::runtime_error &ex)
+	{
+		SendFailure(ex.what());
+	}
+
+	return octave_value_list();
+}
+
+void OMWrapper<OMWT_OCTAVE>::SendFailure(const std::string &exceptionMessage, const std::string &messageName)
+{
+	octave_stdout << messageName << ": " << exceptionMessage << std::endl;
+}
+
+template <>
+bool OMWrapper<OMWT_OCTAVE>::GetParam<bool>(size_t paramIdx, const std::string &paramName)
+{
+	CheckParameterIdx(paramIdx, paramName);
+
+	if (!(*currentArgs)(paramIdx).is_bool_type())
+	{
+		std::stringstream ss;
+		ss << "Expected bool type for parameter " << paramName << " at index " << paramIdx;
+		throw std::runtime_error(ss.str());
+	}
+
+	return (*currentArgs)(paramIdx).is_true();
+}
+
+template <>
+int OMWrapper<OMWT_OCTAVE>::GetParam<int>(size_t paramIdx, const std::string &paramName)
+{
+	CheckParameterIdx(paramIdx, paramName);
+
+	if (!(*currentArgs)(paramIdx).is_integer_type())
+	{
+		std::stringstream ss;
+		ss << "Expected integer type for parameter " << paramName << " at index " << paramIdx;
+		throw std::runtime_error(ss.str());
+	}
+
+	return (*currentArgs)(paramIdx).int32_scalar_value();
+}
+
+template <>
+float OMWrapper<OMWT_OCTAVE>::GetParam<float>(size_t paramIdx, const std::string &paramName)
+{
+	CheckParameterIdx(paramIdx, paramName);
+
+	if (!(*currentArgs)(paramIdx).is_numeric_type())
+	{
+		std::stringstream ss;
+		ss << "Expected numeric type for parameter " << paramName << " at index " << paramIdx;
+		throw std::runtime_error(ss.str());
+	}
+
+	return (*currentArgs)(paramIdx).float_value();
+}
+
+template <>
+std::string OMWrapper<OMWT_OCTAVE>::GetParam<std::string>(size_t paramIdx, const std::string &paramName)
+{
+	CheckParameterIdx(paramIdx, paramName);
+
+	if (!(*currentArgs)(paramIdx).is_string())
+	{
+		std::stringstream ss;
+		ss << "Expected string for parameter " << paramName << " at index " << paramIdx;
+		throw std::runtime_error(ss.str());
+	}
+
+	return (*currentArgs)(paramIdx).string_value();
+}
+
+template <>
+std::shared_ptr<OMArray<float>>
+OMWrapper<OMWT_OCTAVE>::GetParam<std::shared_ptr<OMArray<float>>>(size_t paramIdx, const std::string &paramName)
+{
+	CheckParameterIdx(paramIdx, paramName);
+
+	auto av((*currentArgs)(paramIdx).array_value());
+	auto av_dims(av.dims());
+
+	if (av_dims.length() != 2)
+	{
+		std::stringstream ss;
+		ss << "Expected a 1D vector for parameter " << paramName << " at index " << paramIdx;
+		throw std::runtime_error(ss.str());
+	}
+
+	std::vector<float> vecd;
+	for (int i = 0; i < av_dims(0); ++i)
+	{
+		for (int j = 0; j < av_dims(1); ++j)
+		{
+			vecd[i * av_dims(1) + j] = static_cast<float>(av(i, j));
+		}
+	}
+
+	return OMArray<float>::from_vector(vecd);
+}
+
+template <>
+std::shared_ptr<OMMatrix<float>>
+OMWrapper<OMWT_OCTAVE>::GetParam<std::shared_ptr<OMMatrix<float>>>(size_t paramIdx, const std::string &paramName)
+{
+	CheckParameterIdx(paramIdx, paramName);
+
+	auto av((*currentArgs)(paramIdx).array_value());
+	auto av_dims(av.dims());
+
+	int d = av_dims.length();
+	if (d <= 1 || d > 3)
+	{
+		std::stringstream ss;
+		ss << "Unsupported array with dimension depth " << d << " for parameter " << paramName << " at index " << paramIdx;
+		throw std::runtime_error(ss.str());
+	}
+
+	int *dims = new int[3];
+	dims[0] = av.dim1();
+	dims[1] = av.dim2();
+	dims[2] = d == 3 ? av.dim3() : 1;
+
+	std::vector<float> *f = new std::vector<float>(dims[0] * dims[1] * dims[2]);
+
+	// Copy data
+	for (size_t i = 0; i < dims[0]; ++i)
+		for (size_t j = 0; j < dims[1]; ++j)
+			for (size_t k = 0; k < dims[2]; ++k)
+			{
+				size_t idx = (i * dims[1] + j) * dims[2] + k;
+				if (d == 3)
+					(*f)[idx] = static_cast<float>(av(i, j, k));
+				else
+					(*f)[idx] = static_cast<float>(av(i, j));
+			}
+
+	// Delete array when out of scope
+	std::shared_ptr<OMMatrix<float>> matrixPtr(new OMMatrix<float>(f, dims, d),
+											   [this, dims, f](OMMatrix<float> *p) {
+												delete dims;
+												delete f;
+												delete p;
+											   });
+
+	return matrixPtr;
+}
+
+#endif /* OMW_OCTAVE */
