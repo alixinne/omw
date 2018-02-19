@@ -143,6 +143,8 @@ template <> class OMWrapper<OMWT_MATHEMATICA> : public OMWrapperBase<OMWT_MATHEM
 	size_t currentParamIdx;
 	/// Name of the namespace where symbols and messages are defined
 	std::string mathNamespace;
+	/// A flag indicating if the current function has returned a result yet
+	bool hasResult;
 
 	public:
 	/// Reference to the link object to use
@@ -273,6 +275,19 @@ template <> class OMWrapper<OMWT_MATHEMATICA> : public OMWrapperBase<OMWT_MATHEM
 	 * @param fun Function to invoke when the link is ready.
 	 */
 	void RunFunction(std::function<void(OMWrapper<OMWT_MATHEMATICA> &)> fun);
+
+	/**
+	 * Evaluates the given function, assuming its execution returns a result
+	 * @param fun Code to execute to return the result
+	 */
+	template<typename TWrapper>
+	void EvaluateResult(std::function<void(void)> fun)
+	{
+		ConditionalRun<TWrapper>([this, &fun]() {
+			fun();
+			hasResult = true;
+		});
+	}
 
 	/**
 	 * Sends a failure message on the link object to notify of a failure.

@@ -30,8 +30,14 @@ void OMWrapper<OMWT_MATHEMATICA>::RunFunction(std::function<void(OMWrapper<OMWT_
 	try
 	{
 		currentParamIdx = 0;
+		hasResult = false;
 
 		fun(*this);
+
+		if (!hasResult)
+		{
+			MLPutSymbol(link, "Null");
+		}
 	}
 	catch (std::runtime_error &ex)
 	{
@@ -41,16 +47,18 @@ void OMWrapper<OMWT_MATHEMATICA>::RunFunction(std::function<void(OMWrapper<OMWT_
 	currentParamIdx = std::numeric_limits<size_t>::max();
 }
 
-
 void OMWrapper<OMWT_MATHEMATICA>::SendFailure(const std::string &exceptionMessage, const std::string &messageName)
 {
-	MLPutFunction(stdlink, "CompoundExpression", 2);
-	MLPutFunction(stdlink, "Message", 2);
-	MLPutFunction(stdlink, "MessageName", 2);
-	MLPutSymbol(stdlink, mathNamespace.c_str());
-	MLPutString(stdlink, messageName.c_str());
-	MLPutString(stdlink, exceptionMessage.c_str());
-	MLPutSymbol(stdlink, "$Failed");
+	MLPutFunction(link, "CompoundExpression", 2);
+	MLPutFunction(link, "Message", 2);
+	MLPutFunction(link, "MessageName", 2);
+	MLPutSymbol(link, mathNamespace.c_str());
+	MLPutString(link, messageName.c_str());
+	MLPutString(link, exceptionMessage.c_str());
+	MLPutSymbol(link, "$Failed");
+
+	// Note that SendFailure sends a result
+	hasResult = true;
 }
 
 template <>
