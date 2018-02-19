@@ -71,7 +71,7 @@ bool OMWrapper<OMWT_MATHEMATICA>::GetParam<bool>(size_t paramIdx, const std::str
 
 	if (!MLGetSymbol(link, &paramSymbol))
 	{
-		MLClearError(stdlink);
+		MLClearError(link);
 
 		std::stringstream ss;
 		ss << "Failed to read symbol for parameter " << paramName << " at index " << paramIdx;
