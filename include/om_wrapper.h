@@ -23,12 +23,12 @@ public:
 
 private:
     template<typename TWrapper, class Enable = void>
-    struct ResultSender {
+    struct ConditionalRunner {
         void operator()(std::function<void(void)> &&fun) {}
     };
 
     template<typename TWrapper>
-    struct ResultSender<TWrapper, typename std::enable_if<(TWrapper::WrapperType == WrapperType)>::type>
+    struct ConditionalRunner<TWrapper, typename std::enable_if<(TWrapper::WrapperType == WrapperType)>::type>
     {
         void operator()(std::function<void(void)> &&fun) {
             fun();
@@ -53,11 +53,11 @@ public:
 	}
 
     /**
-     * Executes the given code to return the result of the computation.
+     * Executes the given code only on the matching wrapper type.
      */
     template<typename TWrapper>
-    void SendResult(std::function<void(void)> &&fun) {
-        ResultSender<TWrapper>()(std::forward<std::function<void(void)>>(fun));
+    void ConditionalRun(std::function<void(void)> fun) {
+        ConditionalRunner<TWrapper>()(std::forward<std::function<void(void)>>(fun));
     }
 };
 
