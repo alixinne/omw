@@ -168,7 +168,7 @@ public:
 	 * @param userInitializer User initialization function.
      */
     OMWrapper(const std::string &mathNamespace, MLINK &link,
-		std::function<void(void)> &&userInitializer = std::function<void(void)>());
+		std::function<void(void)> userInitializer = std::function<void(void)>());
 
     /**
      * Obtains the value of a given parameter.
