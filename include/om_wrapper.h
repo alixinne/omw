@@ -79,12 +79,13 @@ template<>
 class OMWrapper<OMWT_MATHEMATICA> : public OMWrapperBase<OMWT_MATHEMATICA> {
     /// Id of the next parameter to be retrieved
     size_t currentParamIdx;
-    /// Reference to the link object to use
-    MLINK &link;
     /// Name of the namespace where symbols and messages are defined
     std::string mathNamespace;
 
 public:
+    /// Reference to the link object to use
+    MLINK &link;
+
     /**
      * Constructs a new Mathematica interface wrapper
      * @param mathNamespace   Name of the namespace where symbols and messages are defined
