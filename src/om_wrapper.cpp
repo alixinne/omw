@@ -8,28 +8,12 @@
 #if OMW_MATHEMATICA
 
 OMWrapper<OMWT_MATHEMATICA>::OMWrapper(const std::string &mathNamespace, MLINK &link,
-	std::function<void(void)> &&userInitializer)
+	std::function<void(void)> userInitializer)
     : OMWrapperBase(std::forward<std::function<void(void)>>(userInitializer)),
 	  currentParamIdx(std::numeric_limits<size_t>::max()),
       link(link),
       mathNamespace(mathNamespace)
 {
-}
-
-void OMWrapper<OMWT_MATHEMATICA>::RunFunction(std::function<void(OMWrapper<OMWT_MATHEMATICA>&)> &&fun)
-{
-    try
-    {
-        currentParamIdx = 0;
-
-        fun(*this);
-    }
-    catch (std::runtime_error &ex)
-    {
-        SendFailure(ex.what());
-    }
-
-    currentParamIdx = std::numeric_limits<size_t>::max();
 }
 
 void OMWrapper<OMWT_MATHEMATICA>::CheckParameterIdx(size_t paramIdx, const std::string &paramName)
@@ -43,14 +27,31 @@ void OMWrapper<OMWT_MATHEMATICA>::CheckParameterIdx(size_t paramIdx, const std::
     }
 }
 
-void OMWrapper<OMWT_MATHEMATICA>::SendFailure(const char *exceptionMessage)
+void OMWrapper<OMWT_MATHEMATICA>::RunFunction(std::function<void(OMWrapper<OMWT_MATHEMATICA>&)> fun)
+{
+	try
+	{
+		currentParamIdx = 0;
+
+		fun(*this);
+	}
+	catch (std::runtime_error &ex)
+	{
+		SendFailure(ex.what());
+	}
+
+	currentParamIdx = std::numeric_limits<size_t>::max();
+}
+
+
+void OMWrapper<OMWT_MATHEMATICA>::SendFailure(const std::string &exceptionMessage, const std::string &messageName)
 {
 	MLPutFunction(stdlink, "CompoundExpression", 2);
 	MLPutFunction(stdlink, "Message", 2);
 	MLPutFunction(stdlink, "MessageName", 2);
 	MLPutSymbol(stdlink, mathNamespace.c_str());
-	MLPutString(stdlink, "err");
-	MLPutString(stdlink, exceptionMessage);
+	MLPutString(stdlink, messageName.c_str());
+	MLPutString(stdlink, exceptionMessage.c_str());
 	MLPutSymbol(stdlink, "$Failed");
 }
 
@@ -134,6 +135,87 @@ float OMWrapper<OMWT_MATHEMATICA>::GetParam<float>(size_t paramIdx, const std::s
     currentParamIdx++;
 
     return paramValue;
+}
+
+template<>
+std::string OMWrapper<OMWT_MATHEMATICA>::GetParam<std::string>(size_t paramIdx, const std::string &paramName)
+{
+	CheckParameterIdx(paramIdx, paramName);
+
+	const char *paramValue;
+	if (!MLGetString(link, &paramValue))
+	{
+		MLClearError(link);
+
+		std::stringstream ss;
+		ss << "Failed to get string for parameter " << paramName << " at index " << paramIdx;
+		throw std::runtime_error(ss.str());
+	}
+
+	currentParamIdx++;
+
+	std::string paramResult(paramValue);
+	MLReleaseString(paramValue);
+
+	return paramResult;
+}
+
+template<>
+std::shared_ptr<OMArray<float>> OMWrapper<OMWT_MATHEMATICA>::GetParam<std::shared_ptr<OMArray<float>>>(size_t paramIdx, const std::string &paramName)
+{
+    CheckParameterIdx(paramIdx, paramName);
+
+	// Get the array
+	float *arrayData;
+	int arrayLen;
+
+	if (!MLGetReal32List(link, &arrayData, &arrayLen))
+	{
+		MLClearError(link);
+
+		std::stringstream ss;
+		ss << "Failed to get Real32List for parameter " << paramName << " at index " << paramIdx;
+		throw std::runtime_error(ss.str());
+	}
+
+	currentParamIdx++;
+
+	// Delete array when out of scope
+	std::shared_ptr<OMArray<float>> arrayPtr(new OMArray<float>(arrayData, arrayLen), [this](OMArray<float> *p) {
+		MLReleaseReal32List(link, p->data(), p->size());
+	});
+
+	return arrayPtr;
+}
+
+template<>
+std::shared_ptr<OMMatrix<float>> OMWrapper<OMWT_MATHEMATICA>::GetParam<std::shared_ptr<OMMatrix<float>>>(size_t paramIdx, const std::string &paramName)
+{
+    CheckParameterIdx(paramIdx, paramName);
+
+    // Get the array
+    float *arrayData;
+    int *arrayDims;
+    int arrayDepth;
+    char **arrayHeads;
+
+    if (!MLGetReal32Array(link, &data, &dims, &heads, &d))
+    {
+        MLClearError(link);
+
+        std::stringstream ss;
+        ss << "Failed to get Real32Array for parameter " << paramName << " at index " << paramIdx;
+        throw std::runtime_error(ss.str());
+    }
+
+	currentParamIdx++;
+
+    // Delete array when out of scope
+    std::shared_ptr<OMMatrix<float>> matrixPtr(new OMMatrix<float>(arrayData, arrayDims, arrayDepth, arrayHeads), [this](OMMatrix<float> *p) {
+        MLReleaseReal32Array(link, p->data(), p->dims(), p->heads(), p->depth());
+    });
+
+    return matrixPtr;
 }
 
 #if OMW_INCLUDE_MAIN
