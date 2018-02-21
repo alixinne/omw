@@ -15,12 +15,8 @@
  */
 enum OMWrapperType
 {
-#if OMW_MATHEMATICA
 	OMWT_MATHEMATICA = 2,
-#endif
-#if OMW_OCTAVE
 	OMWT_OCTAVE = 3,
-#endif
 };
 
 /**
