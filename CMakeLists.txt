@@ -1,0 +1,7 @@
+set(OMW_SOURCES
+${CMAKE_CURRENT_SOURCE_DIR}/src/om_mathematica.cpp
+${CMAKE_CURRENT_SOURCE_DIR}/src/om_octave.cpp
+${CMAKE_CURRENT_SOURCE_DIR}/src/om_wrapper_base.cpp PARENT_SCOPE)
+
+set(OMW_INCLUDE_DIR
+${CMAKE_CURRENT_SOURCE_DIR}/include PARENT_SCOPE)
