@@ -47,7 +47,7 @@ template <typename T> class OMArray
 	template<typename... Args>
 	static std::shared_ptr<OMArray<T>> from_vector(Args... args)
 	{
-		return std::make_shared<OMArray<T>>(std::vector<T>(std::forward<Args...>(args...)));
+		return std::make_shared<OMArray<T>>(std::vector<T>(args...));
 	}
 };
 
