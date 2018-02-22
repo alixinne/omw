@@ -286,8 +286,9 @@ template <> class OMWrapper<OMWT_MATHEMATICA> : public OMWrapperBase<OMWT_MATHEM
 	 * Runs a function using the state of the link associated with this interface
 	 * wrapper.
 	 * @param fun Function to invoke when the link is ready.
+	 * @return true
 	 */
-	void RunFunction(std::function<void(OMWrapper<OMWT_MATHEMATICA> &)> fun);
+	bool RunFunction(std::function<void(OMWrapper<OMWT_MATHEMATICA> &)> fun);
 
 	/**
 	 * Evaluates the given function, assuming its execution returns a result

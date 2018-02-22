@@ -25,7 +25,7 @@ void OMWrapper<OMWT_MATHEMATICA>::CheckParameterIdx(size_t paramIdx, const std::
 	}
 }
 
-void OMWrapper<OMWT_MATHEMATICA>::RunFunction(std::function<void(OMWrapper<OMWT_MATHEMATICA> &)> fun)
+bool OMWrapper<OMWT_MATHEMATICA>::RunFunction(std::function<void(OMWrapper<OMWT_MATHEMATICA> &)> fun)
 {
 	try
 	{
@@ -45,6 +45,7 @@ void OMWrapper<OMWT_MATHEMATICA>::RunFunction(std::function<void(OMWrapper<OMWT_
 	}
 
 	currentParamIdx = std::numeric_limits<size_t>::max();
+	return true;
 }
 
 void OMWrapper<OMWT_MATHEMATICA>::SendFailure(const std::string &exceptionMessage, const std::string &messageName)
@@ -296,6 +297,7 @@ octave_value_list OMWrapper<OMWT_OCTAVE>::RunFunction(const octave_value_list &a
 		result = octave_value_list();
 
 		fun(*this);
+		return result;
 	}
 	catch (std::runtime_error &ex)
 	{
