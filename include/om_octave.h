@@ -95,15 +95,6 @@ class OMWrapperOctave : public OMWrapperBase
 	octave_value_list RunFunction(const octave_value_list &args, std::function<void(OMWrapperOctave &)> fun);
 
 	/**
-	 * Evaluates the given function, assuming its execution returns a result
-	 * @param fun Code to execute to return the result
-	 */
-	void EvaluateResult(std::function<void(void)> fun)
-	{
-		fun();
-	}
-
-	/**
 	 * Sends a failure message on the link object to notify of a failure.
 	 * @param exceptionMessage Text to send in the message
 	 * @param messageName      Name of the format string to use
@@ -152,8 +143,8 @@ OMWrapperOctave::GetParam<std::shared_ptr<OMMatrix<float>>>(size_t paramIdx,
 																		const std::string &paramName);
 
 
-#define OM_RESULT_OCTAVE(w,code) w.EvaluateResult(code)
-#define OM_OCTAVE(w,code) w.ConditionalRun(code)
+#define OM_RESULT_OCTAVE(w,code) (code)()
+#define OM_OCTAVE(w,code) (code)()
 
 #else /* OMW_OCTAVE */
 
