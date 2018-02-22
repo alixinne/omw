@@ -321,6 +321,7 @@ bool OMWrapper<OMWT_OCTAVE>::GetParam<bool>(size_t paramIdx, const std::string &
 	{
 		std::stringstream ss;
 		ss << "Expected bool type for parameter " << paramName << " at index " << paramIdx;
+		ss << " but got " << (*currentArgs)(paramIdx).type_name();
 		throw std::runtime_error(ss.str());
 	}
 
@@ -335,7 +336,8 @@ int OMWrapper<OMWT_OCTAVE>::GetParam<int>(size_t paramIdx, const std::string &pa
 	if (!(*currentArgs)(paramIdx).is_integer_type())
 	{
 		std::stringstream ss;
-		ss << "Expected integer type for parameter " << paramName << " at index " << paramIdx;
+		ss << "Expected scalar type for parameter " << paramName << " at index " << paramIdx;
+		ss << " but got " << (*currentArgs)(paramIdx).type_name();
 		throw std::runtime_error(ss.str());
 	}
 
@@ -351,6 +353,7 @@ float OMWrapper<OMWT_OCTAVE>::GetParam<float>(size_t paramIdx, const std::string
 	{
 		std::stringstream ss;
 		ss << "Expected numeric type for parameter " << paramName << " at index " << paramIdx;
+		ss << " but got " << (*currentArgs)(paramIdx).type_name();
 		throw std::runtime_error(ss.str());
 	}
 
@@ -366,6 +369,7 @@ std::string OMWrapper<OMWT_OCTAVE>::GetParam<std::string>(size_t paramIdx, const
 	{
 		std::stringstream ss;
 		ss << "Expected string for parameter " << paramName << " at index " << paramIdx;
+		ss << " but got " << (*currentArgs)(paramIdx).type_name();
 		throw std::runtime_error(ss.str());
 	}
 
@@ -385,6 +389,7 @@ OMWrapper<OMWT_OCTAVE>::GetParam<std::shared_ptr<OMArray<float>>>(size_t paramId
 	{
 		std::stringstream ss;
 		ss << "Expected a 1D vector for parameter " << paramName << " at index " << paramIdx;
+		ss << " but got " << (*currentArgs)(paramIdx).type_name();
 		throw std::runtime_error(ss.str());
 	}
 
