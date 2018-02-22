@@ -50,6 +50,12 @@ bool OMWrapperMathematica::RunFunction(std::function<void(OMWrapperMathematica &
 	return true;
 }
 
+void OMWrapperMathematica::EvaluateResult(std::function<void(void)> fun)
+{
+	fun();
+	hasResult = true;
+}
+
 void OMWrapperMathematica::SendFailure(const std::string &exceptionMessage, const std::string &messageName)
 {
 	MLPutFunction(link, "CompoundExpression", 2);

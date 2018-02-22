@@ -154,11 +154,7 @@ class OMWrapperMathematica : public OMWrapperBase
 	 * Evaluates the given function, assuming its execution returns a result
 	 * @param fun Code to execute to return the result
 	 */
-	void EvaluateResult(std::function<void(void)> fun)
-	{
-		fun();
-		hasResult = true;
-	}
+	void EvaluateResult(std::function<void(void)> fun);
 
 	/**
 	 * Sends a failure message on the link object to notify of a failure.
