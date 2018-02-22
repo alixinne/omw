@@ -506,4 +506,20 @@ OMWrapper<OMWT_OCTAVE>::GetParam<std::shared_ptr<OMMatrix<float>>>(size_t paramI
 
 #endif /* OMW_OCTAVE */
 
+#if OMW_MATHEMATICA
+#define OM_RESULT_MATHEMATICA(w,code) w.template EvaluateResult<OMWrapper<OMWT_MATHEMATICA>>(code)
+#define OM_MATHEMATICA(w,code) w.template ConditionalRun<OMWrapper<OMWT_MATHEMATICA>>(code)
+#else
+#define OM_RESULT_MATHEMATICA(w,code)
+#define OM_MATHEMATICA(w,code)
+#endif
+
+#if OMW_OCTAVE
+#define OM_RESULT_OCTAVE(w,code) w.template EvaluateResult<OMWrapper<OMWT_OCTAVE>>(code)
+#define OM_OCTAVE(w,code) w.template ConditionalRun<OMWrapper<OMWT_OCTAVE>>(code)
+#else
+#define OM_RESULT_OCTAVE(w,code)
+#define OM_OCTAVE(w,code)
+#endif
+
 #endif /* _OM_WRAPPER_H_ */
