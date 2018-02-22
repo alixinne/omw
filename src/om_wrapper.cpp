@@ -333,7 +333,7 @@ int OMWrapper<OMWT_OCTAVE>::GetParam<int>(size_t paramIdx, const std::string &pa
 {
 	CheckParameterIdx(paramIdx, paramName);
 
-	if (!(*currentArgs)(paramIdx).is_integer_type())
+	if (!(*currentArgs)(paramIdx).is_scalar_type())
 	{
 		std::stringstream ss;
 		ss << "Expected scalar type for parameter " << paramName << " at index " << paramIdx;
