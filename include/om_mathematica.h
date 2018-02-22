@@ -3,6 +3,8 @@
 
 #if OMW_MATHEMATICA
 
+#include <boost/optional.hpp>
+
 #include "mathlink.h"
 
 /**

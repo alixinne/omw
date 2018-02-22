@@ -1,7 +1,10 @@
 #include <cstring>
 #include <sstream>
 
+#include "om_array.h"
+#include "om_matrix.h"
 #include "om_wrapper_base.h"
+
 #include "om_mathematica.h"
 
 #if OMW_MATHEMATICA
