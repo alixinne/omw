@@ -14,7 +14,3 @@ void OMWrapperBase::CheckInitialization()
 	}
 }
 
-void OMWrapperBase::ConditionalRun(std::function<void(void)> fun)
-{
-	fun();
-}

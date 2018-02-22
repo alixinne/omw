@@ -206,7 +206,7 @@ OMWrapperMathematica::GetParam<std::shared_ptr<OMMatrix<float>>>(size_t paramIdx
 
 
 #define OM_RESULT_MATHEMATICA(w,code) w.EvaluateResult(code)
-#define OM_MATHEMATICA(w,code) w.ConditionalRun(code)
+#define OM_MATHEMATICA(w,code) (code)()
 
 #else /* OMW_MATHEMATICA */
 

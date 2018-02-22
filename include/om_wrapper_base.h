@@ -22,12 +22,6 @@ class OMWrapperBase
 	 * Ensures the user initialization routine has been called.
 	 */
 	void CheckInitialization();
-
-	/**
-	 * Runs the given lambda
-	 * @param fun Lambda to run
-	 */
-	void ConditionalRun(std::function<void(void)> fun);
 };
 
 #endif /* _OM_WRAPPER_BASE_H_ */
