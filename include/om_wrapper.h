@@ -299,6 +299,7 @@ template <> class OMWrapper<OMWT_MATHEMATICA> : public OMWrapperBase<OMWT_MATHEM
 	{
 		ConditionalRun<TWrapper>([this, &fun]() {
 			fun();
+			hasResult = true;
 		});
 	}
 
