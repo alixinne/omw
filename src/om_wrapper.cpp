@@ -393,7 +393,7 @@ OMWrapper<OMWT_OCTAVE>::GetParam<std::shared_ptr<OMArray<float>>>(size_t paramId
 		throw std::runtime_error(ss.str());
 	}
 
-	std::vector<float> vecd;
+	std::vector<float> vecd(av_dims(0) * av_dims(1));
 	for (int i = 0; i < av_dims(0); ++i)
 	{
 		for (int j = 0; j < av_dims(1); ++j)
