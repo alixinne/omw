@@ -378,6 +378,8 @@ template <> class OMWrapper<OMWT_OCTAVE> : public OMWrapperBase<OMWT_OCTAVE>
 
 	inline octave_value_list &Result() { return result; }
 
+	inline const octave_value_list &Args() { return *currentArgs; }
+
 	/**
 	 * Obtains the value of a given parameter.
 	 * @param  paramIdx  Ordinal index of the parameter, for consistency with the
