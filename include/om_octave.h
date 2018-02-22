@@ -3,6 +3,8 @@
 
 #if OMW_OCTAVE
 
+#include <boost/optional.hpp>
+
 #include <oct.h>
 #include <parse.h>
 
