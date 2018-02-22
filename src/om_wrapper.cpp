@@ -190,7 +190,7 @@ OMWrapper<OMWT_MATHEMATICA>::GetParam<std::shared_ptr<OMArray<float>>>(size_t pa
 	// Delete array when out of scope
 	std::shared_ptr<OMArray<float>> arrayPtr(new OMArray<float>(arrayData, arrayLen),
 											 [this](OMArray<float> *p) {
-												 MLReleaseReal32List(link, p->data(), p->size());
+												 MLReleaseReal32List(link, const_cast<float*>(p->data()), p->size());
 												 delete p;
 											 });
 
@@ -223,7 +223,7 @@ OMWrapper<OMWT_MATHEMATICA>::GetParam<std::shared_ptr<OMMatrix<float>>>(size_t p
 	// Delete array when out of scope
 	std::shared_ptr<OMMatrix<float>> matrixPtr(new OMMatrix<float>(arrayData, arrayDims, arrayDepth, arrayHeads),
 											   [this](OMMatrix<float> *p) {
-												   MLReleaseReal32Array(link, p->data(), p->dims(),
+												   MLReleaseReal32Array(link, const_cast<float*>(p->data()), p->dims(),
 																		p->heads(), p->depth());
 												   delete p;
 											   });
