@@ -17,7 +17,7 @@ OMWrapperOctave::OMWrapperOctave(std::function<void(void)> userInitializer)
 
 void OMWrapperOctave::CheckParameterIdx(size_t paramIdx, const std::string &paramName)
 {
-	if ((*currentArgs).length() <= paramIdx)
+	if (size_t((*currentArgs).length()) <= paramIdx)
 	{
 		std::stringstream ss;
 		ss << "Requested parameter " << paramName << " at index " << paramIdx
@@ -167,9 +167,9 @@ OMWrapperOctave::GetParam<std::shared_ptr<OMMatrix<float>>>(size_t paramIdx, con
 	std::vector<float> *f = new std::vector<float>(dims[0] * dims[1] * dims[2]);
 
 	// Copy data
-	for (size_t i = 0; i < dims[0]; ++i)
-		for (size_t j = 0; j < dims[1]; ++j)
-			for (size_t k = 0; k < dims[2]; ++k)
+	for (int i = 0; i < dims[0]; ++i)
+		for (int j = 0; j < dims[1]; ++j)
+			for (int k = 0; k < dims[2]; ++k)
 			{
 				size_t idx = (i * dims[1] + j) * dims[2] + k;
 				if (d == 3)

@@ -54,7 +54,7 @@ class OMWrapperOctave : public OMWrapperBase
 	template <typename T>
 	boost::optional<T> GetOptionalParam(size_t paramIdx, const std::string &paramName)
 	{
-		if (paramIdx >= currentArgs->length())
+		if (paramIdx >= size_t(currentArgs->length()))
 		{
 			return boost::optional<T>();
 		}
@@ -70,7 +70,7 @@ class OMWrapperOctave : public OMWrapperBase
 		CheckParameterIdx(firstParamIdx, paramName);
 
 		// Check enough args are available
-		if (firstParamIdx + sizeof...(Types) >= currentArgs->length())
+		if (firstParamIdx + sizeof...(Types) >= size_t(currentArgs->length()))
 		{
 			std::stringstream ss;
 			ss << "Not enough args for building a tuple of size "

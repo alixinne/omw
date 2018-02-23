@@ -12,7 +12,7 @@
 OMWrapperMathematica::OMWrapperMathematica(const std::string &mathNamespace, MLINK &link,
 									   std::function<void(void)> userInitializer)
 : OMWrapperBase(std::forward<std::function<void(void)>>(userInitializer)),
-  currentParamIdx(std::numeric_limits<size_t>::max()), link(link), mathNamespace(mathNamespace)
+  currentParamIdx(std::numeric_limits<size_t>::max()), mathNamespace(mathNamespace), link(link)
 {
 }
 
