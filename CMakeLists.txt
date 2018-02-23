@@ -8,6 +8,7 @@ find_package(Octave)
 set(OMW_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
 set(OMW_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
 
+# Mathematica library
 if(Mathematica_FOUND)
 	add_library(omw_mathematica STATIC
 		${OMW_SRC_DIR}/om_mathematica.cpp
@@ -20,6 +21,9 @@ if(Mathematica_FOUND)
 		${Mathematica_MathLink_INCLUDE_DIR})
 	target_link_libraries(omw_mathematica INTERFACE
 		${Mathematica_MathLink_LIBRARIES})
+
+	# C++ 14 required
+	set_property(TARGET omw_mathematica PROPERTY CXX_STANDARD 14)
 endif()
 
 # Octave library
