@@ -1,4 +1,5 @@
 #include <sstream>
+#include <dlfcn.h>
 
 #include "om_array.h"
 #include "om_matrix.h"
@@ -8,11 +9,30 @@
 
 #if OMW_OCTAVE
 
-OMWrapperOctave::OMWrapperOctave(std::function<void(void)> userInitializer)
+OMWrapperOctave::OMWrapperOctave(void *sym, std::function<void(void)> userInitializer)
 : OMWrapperBase(std::forward<std::function<void(void)>>(userInitializer)),
   currentArgs(),
-  result()
+  result(),
+  autoloadPath()
 {
+	if (sym)
+	{
+		Dl_info dl_info;
+		dladdr(sym, &dl_info);
+		autoloadPath = std::string(dl_info.dli_fname);
+	}
+}
+
+void OMWrapperOctave::SetAutoload(const std::string &name)
+{
+	if (autoloadPath.empty())
+		throw std::runtime_error("No autoload library has been specified in this wrapper instance");
+
+	octave_value_list args;
+	args(0) = name;
+	args(1) = autoloadPath;
+
+	feval("autoload", args);
 }
 
 void OMWrapperOctave::CheckParameterIdx(size_t paramIdx, const std::string &paramName)

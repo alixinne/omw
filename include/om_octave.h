@@ -17,18 +17,33 @@ class OMWrapperOctave : public OMWrapperBase
 	const octave_value_list *currentArgs;
 	/// Current list of values to return
 	octave_value_list result;
+	/// Resolved path for autoloading
+	std::string autoloadPath;
 
 	public:
 
 	/**
 	 * Constructs a new Octave interface wrapper
+	 * @param sym             Symbol to use for locating the containing .so/dll
 	 * @param userInitializer User initialization function.
 	 */
-	OMWrapperOctave(std::function<void(void)> userInitializer = std::function<void(void)>());
+	OMWrapperOctave(void *sym, std::function<void(void)> userInitializer = std::function<void(void)>());
 
 	inline octave_value_list &Result() { return result; }
 
 	inline const octave_value_list &Args() { return *currentArgs; }
+
+	/**
+	 * @brief Defines a function to be autoloaded from the current library.
+	 *
+	 * The library is defined by the symbol given to the OMWrapperOctave
+	 * constructor.
+	 *
+	 * @param name Name of the function to be autoloaded
+	 * @throws std::runtime_error If no symbol was specified during the
+	 * construction, no library can be defined for autoloading.
+	 */
+	void SetAutoload(const std::string &name);
 
 	/**
 	 * Obtains the value of a given parameter.
