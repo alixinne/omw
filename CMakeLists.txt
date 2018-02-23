@@ -2,11 +2,13 @@ cmake_minimum_required(VERSION 3.1)
 
 # Load Octave and Mathematica packages from cmake/
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
+find_package(Mathematica COMPONENTS MathLink)
 find_package(Octave)
 
 # Set directories
 set(OMW_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
-set(OMW_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
+set(OMW_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src
+	CACHE PATH "Path to the omw sources")
 
 # Mathematica library
 if(Mathematica_FOUND)
@@ -24,6 +26,87 @@ if(Mathematica_FOUND)
 
 	# C++ 14 required
 	set_property(TARGET omw_mathematica PROPERTY CXX_STANDARD 14)
+
+	# We need to put some variables in the CMakeCache because
+	# omw_add_mathematica will be invoked from an outer scope
+	set(MATHEMATICA_VARIABLES Mathematica_SYSTEM_ID Mathematica_USERBASE_DIR)
+	foreach(VAR_NAME ${MATHEMATICA_VARIABLES})
+		set(${VAR_NAME} ${${VAR_NAME}}
+			CACHE PATH "Mathematica ${VAR_NAME}" FORCE)
+	endforeach()
+
+	# Helper function to create a Mathematica target
+	function(omw_add_mathematica target_name)
+		cmake_parse_arguments(OMW_ADD "" "PACKAGE_NAME;INSTALL" "MPREP_SOURCES;SOURCES;LINK_LIBRARIES" ${ARGN})
+
+		message(STATUS "Creating Mathematica target ${target_name}")
+
+		# Set configure_file variables
+		set(ML_PACKAGE_NAME ${OMW_ADD_PACKAGE_NAME})
+		set(ML_OUTPUT_NAME ${target_name})
+
+		# Process MPREP sources
+		set(ML_MPREP_TARGETS "")
+		foreach(MPREP_SOURCE ${OMW_ADD_MPREP_SOURCES})
+			# Get source name
+			get_filename_component(MPREP_SOURCE_NAME ${MPREP_SOURCE} NAME)
+			# Build target path
+			set(MPREP_SOURCE_TARGET "${CMAKE_CURRENT_BINARY_DIR}/${MPREP_SOURCE_NAME}.c")
+			# Prepare target
+			Mathematica_MathLink_MPREP_TARGET(${MPREP_SOURCE} OUTPUT ${MPREP_SOURCE_TARGET})
+			# Add to list of MPREP sources
+			list(APPEND ML_MPREP_TARGETS ${MPREP_SOURCE_TARGET})
+		endforeach()
+
+		# Add the executable target
+		add_executable(${target_name}
+			${OMW_ADD_SOURCES}
+			${ML_MPREP_TARGETS})
+
+		# Add its link libraries
+		target_link_libraries(${target_name} ${OMW_ADD_LINK_LIBRARIES} omw_mathematica)
+
+		# On Windows, create a graphical executable
+		if(WIN32)
+			set(TARGET_NEW_LINK_FLAGS "/SUBSYSTEM:WINDOWS")
+			get_target_property(TARGET_LINK_FLAGS ${target_name} LINK_FLAGS)
+			if(TARGET_LINK_FLAGS)
+				set(TARGET_NEW_LINK_FLAGS "${TARGET_LINK_FLAGS} ${TARGET_NEW_LINK_FLAGS}")
+			endif()
+			set_target_properties(${target_name} PROPERTIES LINK_FLAGS ${TARGET_NEW_LINK_FLAGS})
+		endif()
+
+		# Create the install tree in the build directory
+		set(PACKAGE_TARGET_DIR ${CMAKE_CURRENT_BINARY_DIR}/${OMW_ADD_PACKAGE_NAME})
+		execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory "${PACKAGE_TARGET_DIR}")
+
+		# Configure main package file
+		configure_file(${OMW_SRC_DIR}/mathematica/Package.m
+			${PACKAGE_TARGET_DIR}/${OMW_ADD_PACKAGE_NAME}.m @ONLY)
+
+		# Configure Kernel/init.m
+		execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory "${PACKAGE_TARGET_DIR}/Kernel")
+		configure_file(${OMW_SRC_DIR}/mathematica/Kernel/init.m
+			${PACKAGE_TARGET_DIR}/Kernel/init.m @ONLY)
+
+		# Add the commands to copy the output to the package directory
+		add_custom_command(TARGET ${target_name} POST_BUILD
+			COMMAND ${CMAKE_COMMAND} -E make_directory "${PACKAGE_TARGET_DIR}/${Mathematica_SYSTEM_ID}/"
+			COMMAND ${CMAKE_COMMAND} -E copy "$<TARGET_FILE:${target_name}>" "${PACKAGE_TARGET_DIR}/${Mathematica_SYSTEM_ID}/")
+
+		# Make an installation target
+		if(OMW_ADD_INSTALL)
+			install(DIRECTORY ${PACKAGE_TARGET_DIR}
+					DESTINATION ${Mathematica_USERBASE_DIR}/Applications/${OMW_ADD_PACKAGE_NAME}
+					COMPONENT ${OMW_ADD_INSTALL}
+					USE_SOURCE_PERMISSIONS)
+		endif()
+	endfunction()
+else()
+	# Helper function to create a Mathematica target, but Mathematica is not available
+	function(omw_add_mathematica target_name)
+		message(STATUS "Skipping Mathematica target ${target_name}")
+	endfunction()
 endif()
 
 # Octave library
