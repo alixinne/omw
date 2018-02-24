@@ -1,3 +1,5 @@
+#define NOMINMAX
+
 #include <cstring>
 #include <sstream>
 
