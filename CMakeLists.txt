@@ -97,7 +97,7 @@ if(Mathematica_FOUND)
 		# Make an installation target
 		if(OMW_ADD_INSTALL)
 			install(DIRECTORY ${PACKAGE_TARGET_DIR}
-					DESTINATION ${Mathematica_USERBASE_DIR}/Applications/${OMW_ADD_PACKAGE_NAME}
+					DESTINATION ${Mathematica_USERBASE_DIR}/Applications
 					COMPONENT ${OMW_ADD_INSTALL}
 					USE_SOURCE_PERMISSIONS)
 		endif()
