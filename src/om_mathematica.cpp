@@ -18,13 +18,18 @@ OMWrapperMathematica::OMWrapperMathematica(const std::string &mathNamespace, MLI
 {
 }
 
-void OMWrapperMathematica::CheckParameterIdx(size_t paramIdx, const std::string &paramName)
+OMWrapperMathematica::ParamReaderBase::ParamReaderBase(OMWrapperMathematica &w)
+	: w(w)
 {
-	if (currentParamIdx != paramIdx)
+}
+
+void OMWrapperMathematica::ParamReaderBase::CheckParameterIdx(size_t paramIdx, const std::string &paramName)
+{
+	if (w.currentParamIdx != paramIdx)
 	{
 		std::stringstream ss;
 		ss << "Requested parameter " << paramName << " at index " << paramIdx
-		   << " while the current available parameter is at index " << currentParamIdx;
+		   << " while the current available parameter is at index " << w.currentParamIdx;
 		throw std::runtime_error(ss.str());
 	}
 }
@@ -73,16 +78,16 @@ void OMWrapperMathematica::SendFailure(const std::string &exceptionMessage, cons
 }
 
 template <>
-bool OMWrapperMathematica::GetParam<bool>(size_t paramIdx, const std::string &paramName)
+bool OMWrapperMathematica::ParamReader<bool>::operator()(size_t paramIdx, const std::string &paramName)
 {
 	CheckParameterIdx(paramIdx, paramName);
 
 	const char *paramSymbol;
 	bool paramValue;
 
-	if (!MLGetSymbol(link, &paramSymbol))
+	if (!MLGetSymbol(w.link, &paramSymbol))
 	{
-		MLClearError(link);
+		MLClearError(w.link);
 
 		std::stringstream ss;
 		ss << "Failed to read symbol for parameter " << paramName << " at index " << paramIdx;
@@ -91,9 +96,9 @@ bool OMWrapperMathematica::GetParam<bool>(size_t paramIdx, const std::string &pa
 
 	// will delete afterwards
 	std::shared_ptr<const char> pSymbol(paramSymbol,
-										[this](const char *p) { MLReleaseSymbol(link, p); });
+										[this](const char *p) { MLReleaseSymbol(w.link, p); });
 
-	currentParamIdx++;
+	w.currentParamIdx++;
 
 	if (std::strcmp(paramSymbol, "True") == 0)
 	{
@@ -114,71 +119,72 @@ bool OMWrapperMathematica::GetParam<bool>(size_t paramIdx, const std::string &pa
 }
 
 template <>
-int OMWrapperMathematica::GetParam<int>(size_t paramIdx, const std::string &paramName)
+int OMWrapperMathematica::ParamReader<int>::operator()(size_t paramIdx, const std::string &paramName)
 {
 	CheckParameterIdx(paramIdx, paramName);
 
 	int paramValue;
-	if (!MLGetInteger32(link, &paramValue))
+	if (!MLGetInteger32(w.link, &paramValue))
 	{
-		MLClearError(link);
+		MLClearError(w.link);
 
 		std::stringstream ss;
 		ss << "Failed to get integer for parameter " << paramName << " at index " << paramIdx;
 		throw std::runtime_error(ss.str());
 	}
 
-	currentParamIdx++;
+	w.currentParamIdx++;
 
 	return paramValue;
 }
 
 template <>
-float OMWrapperMathematica::GetParam<float>(size_t paramIdx, const std::string &paramName)
+float OMWrapperMathematica::ParamReader<float>::operator()(size_t paramIdx, const std::string &paramName)
 {
 	CheckParameterIdx(paramIdx, paramName);
 
 	float paramValue;
-	if (!MLGetReal32(link, &paramValue))
+	if (!MLGetReal32(w.link, &paramValue))
 	{
-		MLClearError(link);
+		MLClearError(w.link);
 
 		std::stringstream ss;
 		ss << "Failed to get float for parameter " << paramName << " at index " << paramIdx;
 		throw std::runtime_error(ss.str());
 	}
 
-	currentParamIdx++;
+	w.currentParamIdx++;
 
 	return paramValue;
 }
 
 template <>
-std::string OMWrapperMathematica::GetParam<std::string>(size_t paramIdx, const std::string &paramName)
+std::string OMWrapperMathematica::ParamReader<std::string>::
+operator()(size_t paramIdx, const std::string &paramName)
 {
 	CheckParameterIdx(paramIdx, paramName);
 
 	const char *paramValue;
-	if (!MLGetString(link, &paramValue))
+	if (!MLGetString(w.link, &paramValue))
 	{
-		MLClearError(link);
+		MLClearError(w.link);
 
 		std::stringstream ss;
 		ss << "Failed to get string for parameter " << paramName << " at index " << paramIdx;
 		throw std::runtime_error(ss.str());
 	}
 
-	currentParamIdx++;
+	w.currentParamIdx++;
 
 	std::string paramResult(paramValue);
-	MLReleaseString(link, paramValue);
+	MLReleaseString(w.link, paramValue);
 
 	return paramResult;
 }
 
 template <>
-std::shared_ptr<OMArray<float>>
-OMWrapperMathematica::GetParam<std::shared_ptr<OMArray<float>>>(size_t paramIdx, const std::string &paramName)
+std::shared_ptr<OMArray<float>> OMWrapperMathematica::ParamReader<std::shared_ptr<OMArray<float>>>::
+operator()(size_t paramIdx, const std::string &paramName)
 {
 	CheckParameterIdx(paramIdx, paramName);
 
@@ -186,30 +192,29 @@ OMWrapperMathematica::GetParam<std::shared_ptr<OMArray<float>>>(size_t paramIdx,
 	float *arrayData;
 	int arrayLen;
 
-	if (!MLGetReal32List(link, &arrayData, &arrayLen))
+	if (!MLGetReal32List(w.link, &arrayData, &arrayLen))
 	{
-		MLClearError(link);
+		MLClearError(w.link);
 
 		std::stringstream ss;
 		ss << "Failed to get Real32List for parameter " << paramName << " at index " << paramIdx;
 		throw std::runtime_error(ss.str());
 	}
 
-	currentParamIdx++;
+	w.currentParamIdx++;
 
 	// Delete array when out of scope
-	std::shared_ptr<OMArray<float>> arrayPtr(new OMArray<float>(arrayData, arrayLen),
-											 [this](OMArray<float> *p) {
-												 MLReleaseReal32List(link, const_cast<float*>(p->data()), p->size());
-												 delete p;
-											 });
+	std::shared_ptr<OMArray<float>> arrayPtr(new OMArray<float>(arrayData, arrayLen), [this](OMArray<float> *p) {
+		MLReleaseReal32List(w.link, const_cast<float *>(p->data()), p->size());
+		delete p;
+	});
 
 	return arrayPtr;
 }
 
 template <>
-std::shared_ptr<OMMatrix<float>>
-OMWrapperMathematica::GetParam<std::shared_ptr<OMMatrix<float>>>(size_t paramIdx, const std::string &paramName)
+std::shared_ptr<OMMatrix<float>> OMWrapperMathematica::ParamReader<std::shared_ptr<OMMatrix<float>>>::
+operator()(size_t paramIdx, const std::string &paramName)
 {
 	CheckParameterIdx(paramIdx, paramName);
 
@@ -219,24 +224,23 @@ OMWrapperMathematica::GetParam<std::shared_ptr<OMMatrix<float>>>(size_t paramIdx
 	int arrayDepth;
 	char **arrayHeads;
 
-	if (!MLGetReal32Array(link, &arrayData, &arrayDims, &arrayHeads, &arrayDepth))
+	if (!MLGetReal32Array(w.link, &arrayData, &arrayDims, &arrayHeads, &arrayDepth))
 	{
-		MLClearError(link);
+		MLClearError(w.link);
 
 		std::stringstream ss;
 		ss << "Failed to get Real32Array for parameter " << paramName << " at index " << paramIdx;
 		throw std::runtime_error(ss.str());
 	}
 
-	currentParamIdx++;
+	w.currentParamIdx++;
 
 	// Delete array when out of scope
-	std::shared_ptr<OMMatrix<float>> matrixPtr(new OMMatrix<float>(arrayData, arrayDims, arrayDepth, arrayHeads),
-											   [this](OMMatrix<float> *p) {
-												   MLReleaseReal32Array(link, const_cast<float*>(p->data()), p->dims(),
-																		p->heads(), p->depth());
-												   delete p;
-											   });
+	std::shared_ptr<OMMatrix<float>> matrixPtr(
+	new OMMatrix<float>(arrayData, arrayDims, arrayDepth, arrayHeads), [this](OMMatrix<float> *p) {
+		MLReleaseReal32Array(w.link, const_cast<float *>(p->data()), p->dims(), p->heads(), p->depth());
+		delete p;
+	});
 
 	return matrixPtr;
 }
