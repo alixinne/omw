@@ -55,7 +55,8 @@ class OMWrapperOctave : public OMWrapperBase
 	 * the ordinal index of this parameter, or the value is not of the expected type.
 	 */
 	template <class... Types, typename Indices = void, typename = typename std::enable_if<(sizeof...(Types) == 1)>::type>
-	typename std::tuple_element<0, std::tuple<Types...>>::type GetParam(size_t paramIdx, const std::string &paramName);
+	typename std::tuple_element<0, std::tuple<Types...>>::type
+	GetParam(size_t paramIdx, const std::string &paramName);
 
 	/**
 	 * Obtains the value of a given parameter. If the value returned on the link
@@ -78,7 +79,7 @@ class OMWrapperOctave : public OMWrapperBase
 	}
 
 	template <class... Types, typename Indices = std::make_index_sequence<sizeof...(Types)>,
-		typename = typename std::enable_if<(sizeof...(Types) > 1)>::type>
+			  typename = typename std::enable_if<(sizeof...(Types) > 1)>::type>
 	std::tuple<Types...> GetParam(size_t firstParamIdx, const std::string &paramName)
 	{
 		// Check first parameter location
@@ -88,9 +89,8 @@ class OMWrapperOctave : public OMWrapperBase
 		if (firstParamIdx + sizeof...(Types) > size_t(currentArgs->length()))
 		{
 			std::stringstream ss;
-			ss << "Not enough args for building a tuple of size "
-			   << sizeof...(Types) << " for parameter " << paramName
-			   << " at index " << firstParamIdx;
+			ss << "Not enough args for building a tuple of size " << sizeof...(Types)
+			   << " for parameter " << paramName << " at index " << firstParamIdx;
 			throw std::runtime_error(ss.str());
 		}
 
@@ -131,31 +131,26 @@ class OMWrapperOctave : public OMWrapperBase
 	template <class... Types, std::size_t... I>
 	decltype(auto) GetTupleParamImpl(size_t paramIdx, const std::string &paramName, std::index_sequence<I...>)
 	{
-		return std::tuple<Types...>{GetParam<Types>(paramIdx + I, paramName)...};
+		return std::tuple<Types...>{ GetParam<Types>(paramIdx + I, paramName)... };
 	}
 };
 
-template <>
-bool OMWrapperOctave::GetParam<bool>(size_t paramIdx, const std::string &paramName);
+template <> bool OMWrapperOctave::GetParam<bool>(size_t paramIdx, const std::string &paramName);
 
-template <>
-int OMWrapperOctave::GetParam<int>(size_t paramIdx, const std::string &paramName);
+template <> int OMWrapperOctave::GetParam<int>(size_t paramIdx, const std::string &paramName);
 
-template <>
-float OMWrapperOctave::GetParam<float>(size_t paramIdx, const std::string &paramName);
+template <> float OMWrapperOctave::GetParam<float>(size_t paramIdx, const std::string &paramName);
 
 template <>
 std::string OMWrapperOctave::GetParam<std::string>(size_t paramIdx, const std::string &paramName);
 
 template <>
 std::shared_ptr<OMArray<float>>
-OMWrapperOctave::GetParam<std::shared_ptr<OMArray<float>>>(size_t paramIdx,
-																	   const std::string &paramName);
+OMWrapperOctave::GetParam<std::shared_ptr<OMArray<float>>>(size_t paramIdx, const std::string &paramName);
 
 template <>
 std::shared_ptr<OMMatrix<float>>
-OMWrapperOctave::GetParam<std::shared_ptr<OMMatrix<float>>>(size_t paramIdx,
-																		const std::string &paramName);
+OMWrapperOctave::GetParam<std::shared_ptr<OMMatrix<float>>>(size_t paramIdx, const std::string &paramName);
 
 
 #define OM_RESULT_OCTAVE(w,code) (code)()

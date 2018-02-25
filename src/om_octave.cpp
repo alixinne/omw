@@ -69,8 +69,7 @@ void OMWrapperOctave::SendFailure(const std::string &exceptionMessage, const std
 	octave_stdout << messageName << ": " << exceptionMessage << std::endl;
 }
 
-template <>
-bool OMWrapperOctave::GetParam<bool>(size_t paramIdx, const std::string &paramName)
+template <> bool OMWrapperOctave::GetParam<bool>(size_t paramIdx, const std::string &paramName)
 {
 	CheckParameterIdx(paramIdx, paramName);
 
@@ -85,8 +84,7 @@ bool OMWrapperOctave::GetParam<bool>(size_t paramIdx, const std::string &paramNa
 	return (*currentArgs)(paramIdx).is_true();
 }
 
-template <>
-int OMWrapperOctave::GetParam<int>(size_t paramIdx, const std::string &paramName)
+template <> int OMWrapperOctave::GetParam<int>(size_t paramIdx, const std::string &paramName)
 {
 	CheckParameterIdx(paramIdx, paramName);
 
@@ -101,8 +99,7 @@ int OMWrapperOctave::GetParam<int>(size_t paramIdx, const std::string &paramName
 	return (*currentArgs)(paramIdx).int32_scalar_value();
 }
 
-template <>
-float OMWrapperOctave::GetParam<float>(size_t paramIdx, const std::string &paramName)
+template <> float OMWrapperOctave::GetParam<float>(size_t paramIdx, const std::string &paramName)
 {
 	CheckParameterIdx(paramIdx, paramName);
 
@@ -175,7 +172,8 @@ OMWrapperOctave::GetParam<std::shared_ptr<OMMatrix<float>>>(size_t paramIdx, con
 	if (d <= 1 || d > 3)
 	{
 		std::stringstream ss;
-		ss << "Unsupported array with dimension depth " << d << " for parameter " << paramName << " at index " << paramIdx;
+		ss << "Unsupported array with dimension depth " << d << " for parameter " << paramName
+		   << " at index " << paramIdx;
 		throw std::runtime_error(ss.str());
 	}
 
