@@ -188,15 +188,41 @@ class OMWrapperOctave : public OMWrapperBase
 	struct ParamReader<boost::variant<Types...>, typename std::enable_if<(sizeof...(Types) > 0)>::type> : public ParamReaderBase
 	{
 		typedef boost::variant<Types...> ReturnType;
+		typedef ParamReader<boost::variant<Types...>, typename std::enable_if<(sizeof...(Types) > 0)>::type> Self;
 
 		ParamReader(OMWrapperOctave &w)
 			: ParamReaderBase(w)
 		{}
 
-		ReturnType operator()(size_t firstParamIdx, const std::string &paramName)
+		private:
+		template <typename T>
+		static ReturnType VariantReader(Self &pr, size_t paramIdx, const std::string &paramName)
 		{
-			// TODO
-			return ReturnType{};
+			if (!ParamReader<T>(pr.w).IsType(paramIdx, paramName))
+			{
+				std::stringstream ss;
+				ss << "Failed to get variant for parameter " << paramName << " at index " << paramIdx;
+				throw std::runtime_error(ss.str());
+			}
+
+			return ReturnType(ParamReader<T>(pr.w)(paramIdx, paramName));
+		}
+
+		template <typename T0, typename... Tn, typename = typename std::enable_if<(sizeof...(Tn) > 0)>::type>
+		static ReturnType VariantReader(Self &pr, size_t paramIdx, const std::string &paramName)
+		{
+			if (ParamReader<T0>(pr.w).IsType(paramIdx, paramName))
+			{
+				return ReturnType(ParamReader<T0>(pr.w)(paramIdx, paramName));
+			}
+
+			return VariantReader<Tn...>(pr, paramIdx, paramName);
+		}
+
+		public:
+		ReturnType operator()(size_t paramIdx, const std::string &paramName)
+		{
+			return VariantReader<Types...>(*this, paramIdx, paramName);
 		}
 	};
 
