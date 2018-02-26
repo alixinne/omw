@@ -72,8 +72,30 @@ class OMWrapperMathematica : public OMWrapperBase
 
 		ParamReader(OMWrapperMathematica &w) : ParamReaderBase(w) {}
 
-		T0 operator()(size_t paramIdx, const std::string &paramName);
-		operator bool();
+		T0 TryRead(size_t paramIdx, const std::string &paramName, bool &success, bool getData);
+
+		T0 operator()(size_t paramIdx, const std::string &paramName)
+		{
+			bool success = true;
+			T0 value = TryRead(paramIdx, paramName, success, true);
+
+			if (!success)
+			{
+				std::stringstream ss;
+				ss << "Failed to read parameter " << paramName << " at index " << paramIdx;
+				throw std::runtime_error(ss.str());
+			}
+
+			return value;
+		}
+
+		bool IsType(size_t paramIdx, const std::string &paramName)
+		{
+			bool success = true;
+			TryRead(paramIdx, paramName, success, false);
+
+			return success;
+		}
 	};
 
 	/**
@@ -252,28 +274,32 @@ class OMWrapperMathematica : public OMWrapperBase
 	 * @param messageName      Name of the format string to use
 	 */
 	void SendFailure(const std::string &exceptionMessage, const std::string &messageName = std::string("err"));
+
+	private:
+	std::shared_ptr<MLinkMark> PlaceMark();
 };
 
 template <>
-bool OMWrapperMathematica::ParamReader<bool>::operator()(size_t paramIdx, const std::string &paramName);
+bool OMWrapperMathematica::ParamReader<bool>::TryRead(size_t paramIdx, const std::string &paramName, bool &success, bool getData);
 
 template <>
-int OMWrapperMathematica::ParamReader<int>::operator()(size_t paramIdx, const std::string &paramName);
+int OMWrapperMathematica::ParamReader<int>::TryRead(size_t paramIdx, const std::string &paramName, bool &success, bool getData);
 
 template <>
-float OMWrapperMathematica::ParamReader<float>::operator()(size_t paramIdx, const std::string &paramName);
+float OMWrapperMathematica::ParamReader<float>::TryRead(size_t paramIdx, const std::string &paramName, bool &success, bool getData);
 
 template <>
-std::string OMWrapperMathematica::ParamReader<std::string>::
-operator()(size_t paramIdx, const std::string &paramName);
+std::string OMWrapperMathematica::ParamReader<std::string>::TryRead(size_t paramIdx, const std::string &paramName, bool &success, bool getData);
 
 template <>
-std::shared_ptr<OMArray<float>> OMWrapperMathematica::ParamReader<std::shared_ptr<OMArray<float>>>::
-operator()(size_t paramIdx, const std::string &paramName);
+std::shared_ptr<OMArray<float>>
+OMWrapperMathematica::ParamReader<std::shared_ptr<OMArray<float>>>::TryRead(size_t paramIdx,
+																	   const std::string &paramName, bool &success, bool getData);
 
 template <>
-std::shared_ptr<OMMatrix<float>> OMWrapperMathematica::ParamReader<std::shared_ptr<OMMatrix<float>>>::
-operator()(size_t paramIdx, const std::string &paramName);
+std::shared_ptr<OMMatrix<float>>
+OMWrapperMathematica::ParamReader<std::shared_ptr<OMMatrix<float>>>::TryRead(size_t paramIdx,
+																		const std::string &paramName, bool &success, bool getData);
 
 
 #define OM_RESULT_MATHEMATICA(w,code) w.EvaluateResult(code)

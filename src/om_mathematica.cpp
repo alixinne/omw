@@ -77,29 +77,33 @@ void OMWrapperMathematica::SendFailure(const std::string &exceptionMessage, cons
 	hasResult = true;
 }
 
+std::shared_ptr<MLinkMark> OMWrapperMathematica::PlaceMark()
+{
+	MLinkMark *mark = MLCreateMark(link);
+	return std::shared_ptr<MLinkMark>(mark, [this](MLinkMark *m) { MLDestroyMark(link, m); });
+}
+
 template <>
-bool OMWrapperMathematica::ParamReader<bool>::operator()(size_t paramIdx, const std::string &paramName)
+bool OMWrapperMathematica::ParamReader<bool>::TryRead(size_t paramIdx, const std::string &paramName, bool &success, bool getData)
 {
 	CheckParameterIdx(paramIdx, paramName);
 
 	const char *paramSymbol;
-	bool paramValue;
+	bool paramValue(false);
 
+	// Place mark to allow rollback
+	auto mark = w.PlaceMark();
+
+	// Get symbol, on error this is not a boolean
 	if (!MLGetSymbol(w.link, &paramSymbol))
 	{
 		MLClearError(w.link);
 
-		std::stringstream ss;
-		ss << "Failed to read symbol for parameter " << paramName << " at index " << paramIdx;
-		throw std::runtime_error(ss.str());
+		success = false;
+		return paramValue;
 	}
 
-	// will delete afterwards
-	std::shared_ptr<const char> pSymbol(paramSymbol,
-										[this](const char *p) { MLReleaseSymbol(w.link, p); });
-
-	w.currentParamIdx++;
-
+	// Find out value of boolean
 	if (std::strcmp(paramSymbol, "True") == 0)
 	{
 		paramValue = true;
@@ -110,81 +114,122 @@ bool OMWrapperMathematica::ParamReader<bool>::operator()(size_t paramIdx, const 
 	}
 	else
 	{
-		std::stringstream ss;
-		ss << "Unknown symbol " << paramSymbol << " for parameter " << paramName << " at index " << paramIdx;
-		throw std::runtime_error(ss.str());
+		// Not a boolean symbol
+		success = false;
 	}
+
+	// Delete symbol, no longer used
+	MLReleaseSymbol(w.link, paramSymbol);
+
+	// Only advance param index if we want to consume the value
+	if (success && getData)
+		w.currentParamIdx++;
+	
+	// On failure or on type test mode, do not consume value
+	if (!success || !getData)
+		MLSeekToMark(w.link, mark.get(), 0);
 
 	return paramValue;
 }
 
 template <>
-int OMWrapperMathematica::ParamReader<int>::operator()(size_t paramIdx, const std::string &paramName)
+int OMWrapperMathematica::ParamReader<int>::TryRead(size_t paramIdx, const std::string &paramName, bool &success, bool getData)
 {
 	CheckParameterIdx(paramIdx, paramName);
 
-	int paramValue;
-	if (!MLGetInteger32(w.link, &paramValue))
+	if (getData)
 	{
-		MLClearError(w.link);
+		// Get the integer value
+		int paramValue(0);
 
-		std::stringstream ss;
-		ss << "Failed to get integer for parameter " << paramName << " at index " << paramIdx;
-		throw std::runtime_error(ss.str());
+		if (!MLGetInteger32(w.link, &paramValue))
+		{
+			MLClearError(w.link);
+
+			success = false;
+			return paramValue;
+		}
+
+		w.currentParamIdx++;
+
+		return paramValue;
 	}
+	else
+	{
+		// Test the value is an int
+		success = (MLGetType(w.link) == MLTKINT);
 
-	w.currentParamIdx++;
-
-	return paramValue;
+		return 0;
+	}
 }
 
 template <>
-float OMWrapperMathematica::ParamReader<float>::operator()(size_t paramIdx, const std::string &paramName)
+float OMWrapperMathematica::ParamReader<float>::TryRead(size_t paramIdx, const std::string &paramName, bool &success, bool getData)
 {
 	CheckParameterIdx(paramIdx, paramName);
 
-	float paramValue;
-	if (!MLGetReal32(w.link, &paramValue))
+	if (getData)
 	{
-		MLClearError(w.link);
+		// Get the float value
+		float paramValue(0.0f);
 
-		std::stringstream ss;
-		ss << "Failed to get float for parameter " << paramName << " at index " << paramIdx;
-		throw std::runtime_error(ss.str());
+		if (!MLGetReal32(w.link, &paramValue))
+		{
+			MLClearError(w.link);
+
+			success = false;
+			return paramValue;
+		}
+
+		w.currentParamIdx++;
+
+		return paramValue;
 	}
+	else
+	{
+		// Test the value is a float
+		success = (MLGetType(w.link) == MLTKREAL);
 
-	w.currentParamIdx++;
-
-	return paramValue;
+		return 0.0f;
+	}
 }
 
 template <>
-std::string OMWrapperMathematica::ParamReader<std::string>::
-operator()(size_t paramIdx, const std::string &paramName)
+std::string OMWrapperMathematica::ParamReader<std::string>::TryRead(size_t paramIdx, const std::string &paramName, bool &success, bool getData)
 {
 	CheckParameterIdx(paramIdx, paramName);
 
-	const char *paramValue;
-	if (!MLGetString(w.link, &paramValue))
+	if (getData)
 	{
-		MLClearError(w.link);
+		// Get the string value
+		const char *paramValue;
+		if (!MLGetString(w.link, &paramValue))
+		{
+			MLClearError(w.link);
 
-		std::stringstream ss;
-		ss << "Failed to get string for parameter " << paramName << " at index " << paramIdx;
-		throw std::runtime_error(ss.str());
+			success = false;
+			return std::string();
+		}
+
+		w.currentParamIdx++;
+
+		std::string paramResult(paramValue);
+		MLReleaseString(w.link, paramValue);
+
+		return paramResult;
 	}
+	else
+	{
+		// Test the value is a string
+		success = (MLGetType(w.link) == MLTKSTR);
 
-	w.currentParamIdx++;
-
-	std::string paramResult(paramValue);
-	MLReleaseString(w.link, paramValue);
-
-	return paramResult;
+		return std::string();
+	}
 }
 
 template <>
-std::shared_ptr<OMArray<float>> OMWrapperMathematica::ParamReader<std::shared_ptr<OMArray<float>>>::
-operator()(size_t paramIdx, const std::string &paramName)
+std::shared_ptr<OMArray<float>>
+OMWrapperMathematica::ParamReader<std::shared_ptr<OMArray<float>>>::TryRead(size_t paramIdx, const std::string &paramName, bool &success, bool getData)
 {
 	CheckParameterIdx(paramIdx, paramName);
 
@@ -192,29 +237,43 @@ operator()(size_t paramIdx, const std::string &paramName)
 	float *arrayData;
 	int arrayLen;
 
+	// Place mark to allow rollback if needed
+	auto mark = w.PlaceMark();
+
 	if (!MLGetReal32List(w.link, &arrayData, &arrayLen))
 	{
 		MLClearError(w.link);
 
-		std::stringstream ss;
-		ss << "Failed to get Real32List for parameter " << paramName << " at index " << paramIdx;
-		throw std::runtime_error(ss.str());
+		success = false;
+		return std::shared_ptr<OMArray<float>>();
 	}
 
-	w.currentParamIdx++;
+	if (getData)
+	{
+		w.currentParamIdx++;
 
-	// Delete array when out of scope
-	std::shared_ptr<OMArray<float>> arrayPtr(new OMArray<float>(arrayData, arrayLen), [this](OMArray<float> *p) {
-		MLReleaseReal32List(w.link, const_cast<float *>(p->data()), p->size());
-		delete p;
-	});
+		// Delete array when out of scope
+		std::shared_ptr<OMArray<float>> arrayPtr(new OMArray<float>(arrayData, arrayLen),
+												 [this](OMArray<float> *p) {
+													 MLReleaseReal32List(w.link, const_cast<float*>(p->data()), p->size());
+													 delete p;
+												 });
 
-	return arrayPtr;
+		return arrayPtr;
+	}
+	else
+	{
+		// Not in data mode, release list and rollback
+		MLReleaseReal32List(w.link, arrayData, arrayLen);
+		MLSeekToMark(w.link, mark.get(), 0);
+
+		return std::shared_ptr<OMArray<float>>();
+	}
 }
 
 template <>
-std::shared_ptr<OMMatrix<float>> OMWrapperMathematica::ParamReader<std::shared_ptr<OMMatrix<float>>>::
-operator()(size_t paramIdx, const std::string &paramName)
+std::shared_ptr<OMMatrix<float>>
+OMWrapperMathematica::ParamReader<std::shared_ptr<OMMatrix<float>>>::TryRead(size_t paramIdx, const std::string &paramName, bool &success, bool getData)
 {
 	CheckParameterIdx(paramIdx, paramName);
 
@@ -224,25 +283,39 @@ operator()(size_t paramIdx, const std::string &paramName)
 	int arrayDepth;
 	char **arrayHeads;
 
+	// Place mark to allow rollback if needed
+	auto mark = w.PlaceMark();
+
 	if (!MLGetReal32Array(w.link, &arrayData, &arrayDims, &arrayHeads, &arrayDepth))
 	{
 		MLClearError(w.link);
 
-		std::stringstream ss;
-		ss << "Failed to get Real32Array for parameter " << paramName << " at index " << paramIdx;
-		throw std::runtime_error(ss.str());
+		success = false;
+		return std::shared_ptr<OMMatrix<float>>();
 	}
 
-	w.currentParamIdx++;
+	if (getData)
+	{
+		w.currentParamIdx++;
 
-	// Delete array when out of scope
-	std::shared_ptr<OMMatrix<float>> matrixPtr(
-	new OMMatrix<float>(arrayData, arrayDims, arrayDepth, arrayHeads), [this](OMMatrix<float> *p) {
-		MLReleaseReal32Array(w.link, const_cast<float *>(p->data()), p->dims(), p->heads(), p->depth());
-		delete p;
-	});
+		// Delete array when out of scope
+		std::shared_ptr<OMMatrix<float>> matrixPtr(new OMMatrix<float>(arrayData, arrayDims, arrayDepth, arrayHeads),
+												   [this](OMMatrix<float> *p) {
+													   MLReleaseReal32Array(w.link, const_cast<float*>(p->data()), p->dims(),
+																			p->heads(), p->depth());
+													   delete p;
+												   });
 
-	return matrixPtr;
+		return matrixPtr;
+	}
+	else
+	{
+		// Not in data mode, release matrix and rollback
+		MLReleaseReal32Array(w.link, arrayData, arrayDims, arrayHeads, arrayDepth);
+		MLSeekToMark(w.link, mark.get(), 0);
+
+		return std::shared_ptr<OMMatrix<float>>();
+	}
 }
 
 #if OMW_INCLUDE_MAIN
