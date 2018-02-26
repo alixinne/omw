@@ -88,8 +88,30 @@ class OMWrapperOctave : public OMWrapperBase
 			: ParamReaderBase(w)
 		{}
 
-		T0 operator()(size_t paramIdx, const std::string &paramName);
-		operator bool();
+		T0 TryRead(size_t paramIdx, const std::string &paramName, bool &success, bool getData);
+
+		T0 operator()(size_t paramIdx, const std::string &paramName)
+		{
+			bool success = true;
+			T0 value = TryRead(paramIdx, paramName, success, true);
+
+			if (!success)
+			{
+				std::stringstream ss;
+				ss << "Failed to read parameter " << paramName << " at index " << paramIdx;
+				throw std::runtime_error(ss.str());
+			}
+
+			return value;
+		}
+
+		bool IsType(size_t paramIdx, const std::string &paramName)
+		{
+			bool success = true;
+			TryRead(paramIdx, paramName, success, false);
+
+			return success;
+		}
 	};
 
 	/**
@@ -211,24 +233,26 @@ class OMWrapperOctave : public OMWrapperBase
 };
 
 template <>
-bool OMWrapperOctave::ParamReader<bool>::operator()(size_t paramIdx, const std::string &paramName);
+bool OMWrapperOctave::ParamReader<bool>::TryRead(size_t paramIdx, const std::string &paramName, bool &success, bool getData);
 
 template <>
-int OMWrapperOctave::ParamReader<int>::operator()(size_t paramIdx, const std::string &paramName);
+int OMWrapperOctave::ParamReader<int>::TryRead(size_t paramIdx, const std::string &paramName, bool &success, bool getData);
 
 template <>
-float OMWrapperOctave::ParamReader<float>::operator()(size_t paramIdx, const std::string &paramName);
+float OMWrapperOctave::ParamReader<float>::TryRead(size_t paramIdx, const std::string &paramName, bool &success, bool getData);
 
 template <>
-std::string OMWrapperOctave::ParamReader<std::string>::operator()(size_t paramIdx, const std::string &paramName);
+std::string OMWrapperOctave::ParamReader<std::string>::TryRead(size_t paramIdx, const std::string &paramName, bool &success, bool getData);
 
 template <>
-std::shared_ptr<OMArray<float>> OMWrapperOctave::ParamReader<std::shared_ptr<OMArray<float>>>::
-operator()(size_t paramIdx, const std::string &paramName);
+std::shared_ptr<OMArray<float>>
+OMWrapperOctave::ParamReader<std::shared_ptr<OMArray<float>>>::TryRead(size_t paramIdx,
+																	   const std::string &paramName, bool &success, bool getData);
 
 template <>
-std::shared_ptr<OMMatrix<float>> OMWrapperOctave::ParamReader<std::shared_ptr<OMMatrix<float>>>::
-operator()(size_t paramIdx, const std::string &paramName);
+std::shared_ptr<OMMatrix<float>>
+OMWrapperOctave::ParamReader<std::shared_ptr<OMMatrix<float>>>::TryRead(size_t paramIdx,
+																		const std::string &paramName, bool &success, bool getData);
 
 
 #define OM_RESULT_OCTAVE(w,code) (code)()
