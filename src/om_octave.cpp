@@ -35,9 +35,14 @@ void OMWrapperOctave::SetAutoload(const std::string &name)
 	feval("autoload", args);
 }
 
-void OMWrapperOctave::CheckParameterIdx(size_t paramIdx, const std::string &paramName)
+OMWrapperOctave::ParamReaderBase::ParamReaderBase(OMWrapperOctave &w)
+	: w(w)
 {
-	if (size_t((*currentArgs).length()) <= paramIdx)
+}
+
+void OMWrapperOctave::ParamReaderBase::CheckParameterIdx(size_t paramIdx, const std::string &paramName)
+{
+	if (size_t((*w.currentArgs).length()) <= paramIdx)
 	{
 		std::stringstream ss;
 		ss << "Requested parameter " << paramName << " at index " << paramIdx
@@ -69,81 +74,84 @@ void OMWrapperOctave::SendFailure(const std::string &exceptionMessage, const std
 	octave_stdout << messageName << ": " << exceptionMessage << std::endl;
 }
 
-template <> bool OMWrapperOctave::GetParam<bool>(size_t paramIdx, const std::string &paramName)
+template <>
+bool OMWrapperOctave::ParamReader<bool>::operator()(size_t paramIdx, const std::string &paramName)
 {
 	CheckParameterIdx(paramIdx, paramName);
 
-	if (!(*currentArgs)(paramIdx).is_bool_type())
+	if (!(*w.currentArgs)(paramIdx).is_bool_type())
 	{
 		std::stringstream ss;
 		ss << "Expected bool type for parameter " << paramName << " at index " << paramIdx;
-		ss << " but got " << (*currentArgs)(paramIdx).type_name();
+		ss << " but got " << (*w.currentArgs)(paramIdx).type_name();
 		throw std::runtime_error(ss.str());
 	}
 
-	return (*currentArgs)(paramIdx).is_true();
+	return (*w.currentArgs)(paramIdx).is_true();
 }
 
-template <> int OMWrapperOctave::GetParam<int>(size_t paramIdx, const std::string &paramName)
+template <>
+int OMWrapperOctave::ParamReader<int>::operator()(size_t paramIdx, const std::string &paramName)
 {
 	CheckParameterIdx(paramIdx, paramName);
 
-	if (!(*currentArgs)(paramIdx).is_scalar_type())
+	if (!(*w.currentArgs)(paramIdx).is_scalar_type())
 	{
 		std::stringstream ss;
 		ss << "Expected scalar type for parameter " << paramName << " at index " << paramIdx;
-		ss << " but got " << (*currentArgs)(paramIdx).type_name();
+		ss << " but got " << (*w.currentArgs)(paramIdx).type_name();
 		throw std::runtime_error(ss.str());
 	}
 
-	return (*currentArgs)(paramIdx).int32_scalar_value();
+	return (*w.currentArgs)(paramIdx).int32_scalar_value();
 }
 
-template <> float OMWrapperOctave::GetParam<float>(size_t paramIdx, const std::string &paramName)
+template <>
+float OMWrapperOctave::ParamReader<float>::operator()(size_t paramIdx, const std::string &paramName)
 {
 	CheckParameterIdx(paramIdx, paramName);
 
-	if (!(*currentArgs)(paramIdx).is_numeric_type())
+	if (!(*w.currentArgs)(paramIdx).is_numeric_type())
 	{
 		std::stringstream ss;
 		ss << "Expected numeric type for parameter " << paramName << " at index " << paramIdx;
-		ss << " but got " << (*currentArgs)(paramIdx).type_name();
+		ss << " but got " << (*w.currentArgs)(paramIdx).type_name();
 		throw std::runtime_error(ss.str());
 	}
 
-	return (*currentArgs)(paramIdx).float_value();
+	return (*w.currentArgs)(paramIdx).float_value();
 }
 
 template <>
-std::string OMWrapperOctave::GetParam<std::string>(size_t paramIdx, const std::string &paramName)
+std::string OMWrapperOctave::ParamReader<std::string>::operator()(size_t paramIdx, const std::string &paramName)
 {
 	CheckParameterIdx(paramIdx, paramName);
 
-	if (!(*currentArgs)(paramIdx).is_string())
+	if (!(*w.currentArgs)(paramIdx).is_string())
 	{
 		std::stringstream ss;
 		ss << "Expected string for parameter " << paramName << " at index " << paramIdx;
-		ss << " but got " << (*currentArgs)(paramIdx).type_name();
+		ss << " but got " << (*w.currentArgs)(paramIdx).type_name();
 		throw std::runtime_error(ss.str());
 	}
 
-	return (*currentArgs)(paramIdx).string_value();
+	return (*w.currentArgs)(paramIdx).string_value();
 }
 
 template <>
-std::shared_ptr<OMArray<float>>
-OMWrapperOctave::GetParam<std::shared_ptr<OMArray<float>>>(size_t paramIdx, const std::string &paramName)
+std::shared_ptr<OMArray<float>> OMWrapperOctave::ParamReader<std::shared_ptr<OMArray<float>>>::
+operator()(size_t paramIdx, const std::string &paramName)
 {
 	CheckParameterIdx(paramIdx, paramName);
 
-	auto av((*currentArgs)(paramIdx).array_value());
+	auto av((*w.currentArgs)(paramIdx).array_value());
 	auto av_dims(av.dims());
 
 	if (av_dims.length() != 2)
 	{
 		std::stringstream ss;
 		ss << "Expected a 1D vector for parameter " << paramName << " at index " << paramIdx;
-		ss << " but got " << (*currentArgs)(paramIdx).type_name();
+		ss << " but got " << (*w.currentArgs)(paramIdx).type_name();
 		throw std::runtime_error(ss.str());
 	}
 
@@ -160,12 +168,12 @@ OMWrapperOctave::GetParam<std::shared_ptr<OMArray<float>>>(size_t paramIdx, cons
 }
 
 template <>
-std::shared_ptr<OMMatrix<float>>
-OMWrapperOctave::GetParam<std::shared_ptr<OMMatrix<float>>>(size_t paramIdx, const std::string &paramName)
+std::shared_ptr<OMMatrix<float>> OMWrapperOctave::ParamReader<std::shared_ptr<OMMatrix<float>>>::
+operator()(size_t paramIdx, const std::string &paramName)
 {
 	CheckParameterIdx(paramIdx, paramName);
 
-	auto av((*currentArgs)(paramIdx).array_value());
+	auto av((*w.currentArgs)(paramIdx).array_value());
 	auto av_dims(av.dims());
 
 	int d = av_dims.length();

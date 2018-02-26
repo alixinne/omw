@@ -46,59 +46,152 @@ class OMWrapperOctave : public OMWrapperBase
 	void SetAutoload(const std::string &name);
 
 	/**
-	 * Obtains the value of a given parameter.
-	 * @param  paramIdx  Ordinal index of the parameter, for consistency with the
-	 *                   calling pattern in the tm file.
-	 * @param  paramName User-friendly name of the parameter, for debugging purposes.
-	 * @return           The value of the parameter.
-	 * @throws std::runtime_error When the current parameter index does not match
-	 * the ordinal index of this parameter, or the value is not of the expected type.
+	 * Base class for wrapper parameter readers
 	 */
-	template <class... Types, typename Indices = void, typename = typename std::enable_if<(sizeof...(Types) == 1)>::type>
-	typename std::tuple_element<0, std::tuple<Types...>>::type
-	GetParam(size_t paramIdx, const std::string &paramName);
+	struct ParamReaderBase
+	{
+		protected:
+		/// Reference to the object that created this parameter reader
+		OMWrapperOctave &w;
+
+		/**
+		 * Initializes a new instance of the ParamReaderBase class
+		 *
+		 * @param w Wrapper this instance is reading parameters from.
+		 */
+		ParamReaderBase(OMWrapperOctave &w);
+
+		/**
+		 * Ensures the current parameter matches the parameter requested by the caller.
+		 * @param paramIdx  Ordinal index of the parameter
+		 * @param paramName User-friendly name of the parameter
+		 * @throws std::runtime_error See GetParam for details.
+		 */
+		void CheckParameterIdx(size_t paramIdx, const std::string &paramName);
+	};
 
 	/**
-	 * Obtains the value of a given parameter. If the value returned on the link
-	 * is a Null symbol, then this parameter is considered to have no value,
-	 * and an empty boost::optional is returned.
-	 * @param  paramIdx  Ordinal index of the parameter.
-	 * @param  paramName User-friendly name of the parameter.
-	 * @return           The value of the parameter, or an empty optional.
+	 * Template declaration for parameter readers
+	 */
+	template<class T, typename Enable = void>
+	struct ParamReader : public ParamReaderBase {};
+
+	/**
+	 * Atomic parameter reader template
+	 */
+	template<class T0>
+	struct ParamReader<T0, typename std::enable_if<is_simple_param_type<T0>::value>::type> : public ParamReaderBase
+	{
+		typedef T0 ReturnType;
+
+		ParamReader(OMWrapperOctave &w)
+			: ParamReaderBase(w)
+		{}
+
+		T0 operator()(size_t paramIdx, const std::string &paramName);
+		operator bool();
+	};
+
+	/**
+	 * Optional parameter reader template
+	 */
+	template<class T>
+	struct ParamReader<boost::optional<T>> : public ParamReaderBase
+	{
+		typedef boost::optional<T> ReturnType;
+
+		ParamReader(OMWrapperOctave &w)
+			: ParamReaderBase(w)
+		{}
+
+		ReturnType operator()(size_t paramIdx, const std::string &paramName)
+		{
+			if (paramIdx >= size_t(w.currentArgs->length()))
+			{
+				return boost::optional<T>();
+			}
+
+			return boost::optional<T>(w.GetParam<T>(paramIdx, paramName));
+		}
+	};
+
+	/**
+	 * Tuple parameter reader template
+	 */
+	template<class... Types>
+	struct ParamReader<std::tuple<Types...>, typename std::enable_if<(sizeof...(Types) > 1)>::type> : public ParamReaderBase
+	{
+		typedef std::tuple<Types...> ReturnType;
+
+		ParamReader(OMWrapperOctave &w)
+			: ParamReaderBase(w)
+		{}
+
+		private:
+		/**
+		 * Implementation of GetTupleParam variadic template function
+		 */
+		template <std::size_t... I>
+		decltype(auto) GetTupleParamImpl(size_t paramIdx, const std::string &paramName, std::index_sequence<I...>)
+		{
+			return ReturnType{w.GetParam<Types>(paramIdx + I, paramName)...};
+		}
+
+		public:
+		ReturnType operator()(size_t firstParamIdx, const std::string &paramName)
+		{
+			// Check first parameter location
+			CheckParameterIdx(firstParamIdx, paramName);
+
+			// Check enough args are available
+			if (firstParamIdx + sizeof...(Types) > size_t(w.currentArgs->length()))
+			{
+				std::stringstream ss;
+				ss << "Not enough args for building a tuple of size "
+				   << sizeof...(Types) << " for parameter " << paramName
+				   << " at index " << firstParamIdx;
+				throw std::runtime_error(ss.str());
+			}
+
+			std::tuple<Types...> result(GetTupleParamImpl(firstParamIdx, paramName, std::make_index_sequence<sizeof...(Types)>()));
+
+			return result;
+		}
+	};
+
+	/**
+	 * Variant parameter reader template
+	 */
+	template<class... Types>
+	struct ParamReader<boost::variant<Types...>, typename std::enable_if<(sizeof...(Types) > 0)>::type> : public ParamReaderBase
+	{
+		typedef boost::variant<Types...> ReturnType;
+
+		ParamReader(OMWrapperOctave &w)
+			: ParamReaderBase(w)
+		{}
+
+		ReturnType operator()(size_t firstParamIdx, const std::string &paramName)
+		{
+			// TODO
+			return ReturnType{};
+		}
+	};
+
+	/**
+	 * Gets a parameter at the given index.
+	 *
+	 * @param paramIdx  Ordinal index of the parameter
+	 * @param paramName User-friendly name for the parameter
+	 * @tparam Types    Parameter type
+	 * @return Value of the parameter
 	 * @throws std::runtime_error
 	 */
-	template <typename T>
-	boost::optional<T> GetOptionalParam(size_t paramIdx, const std::string &paramName)
+	template<class... Types>
+	typename ParamReader<Types...>::ReturnType GetParam(size_t paramIdx, const std::string &paramName)
 	{
-		if (paramIdx >= size_t(currentArgs->length()))
-		{
-			return boost::optional<T>();
-		}
-
-		return boost::optional<T>(GetParam<T>(paramIdx, paramName));
+		return ParamReader<Types...>(*this)(paramIdx, paramName);
 	}
-
-	template <class... Types, typename Indices = std::make_index_sequence<sizeof...(Types)>,
-			  typename = typename std::enable_if<(sizeof...(Types) > 1)>::type>
-	std::tuple<Types...> GetParam(size_t firstParamIdx, const std::string &paramName)
-	{
-		// Check first parameter location
-		CheckParameterIdx(firstParamIdx, paramName);
-
-		// Check enough args are available
-		if (firstParamIdx + sizeof...(Types) > size_t(currentArgs->length()))
-		{
-			std::stringstream ss;
-			ss << "Not enough args for building a tuple of size " << sizeof...(Types)
-			   << " for parameter " << paramName << " at index " << firstParamIdx;
-			throw std::runtime_error(ss.str());
-		}
-
-		std::tuple<Types...> result(GetTupleParamImpl<Types...>(firstParamIdx, paramName, Indices{}));
-
-		return result;
-	}
-
 
 	/**
 	 * Runs a function using the state of the link associated with this interface
@@ -115,42 +208,27 @@ class OMWrapperOctave : public OMWrapperBase
 	 * @param messageName      Name of the format string to use
 	 */
 	void SendFailure(const std::string &exceptionMessage, const std::string &messageName = std::string("err"));
-
-	private:
-	/**
-	 * Ensures the current parameter matches the parameter requested by the caller.
-	 * @param paramIdx  Ordinal index of the parameter
-	 * @param paramName User-friendly name of the parameter
-	 * @throws std::runtime_error See GetParam for details.
-	 */
-	void CheckParameterIdx(size_t paramIdx, const std::string &paramName);
-
-	/**
-	 * Implementation of GetTupleParam variadic template function
-	 */
-	template <class... Types, std::size_t... I>
-	decltype(auto) GetTupleParamImpl(size_t paramIdx, const std::string &paramName, std::index_sequence<I...>)
-	{
-		return std::tuple<Types...>{ GetParam<Types>(paramIdx + I, paramName)... };
-	}
 };
 
-template <> bool OMWrapperOctave::GetParam<bool>(size_t paramIdx, const std::string &paramName);
-
-template <> int OMWrapperOctave::GetParam<int>(size_t paramIdx, const std::string &paramName);
-
-template <> float OMWrapperOctave::GetParam<float>(size_t paramIdx, const std::string &paramName);
+template <>
+bool OMWrapperOctave::ParamReader<bool>::operator()(size_t paramIdx, const std::string &paramName);
 
 template <>
-std::string OMWrapperOctave::GetParam<std::string>(size_t paramIdx, const std::string &paramName);
+int OMWrapperOctave::ParamReader<int>::operator()(size_t paramIdx, const std::string &paramName);
 
 template <>
-std::shared_ptr<OMArray<float>>
-OMWrapperOctave::GetParam<std::shared_ptr<OMArray<float>>>(size_t paramIdx, const std::string &paramName);
+float OMWrapperOctave::ParamReader<float>::operator()(size_t paramIdx, const std::string &paramName);
 
 template <>
-std::shared_ptr<OMMatrix<float>>
-OMWrapperOctave::GetParam<std::shared_ptr<OMMatrix<float>>>(size_t paramIdx, const std::string &paramName);
+std::string OMWrapperOctave::ParamReader<std::string>::operator()(size_t paramIdx, const std::string &paramName);
+
+template <>
+std::shared_ptr<OMArray<float>> OMWrapperOctave::ParamReader<std::shared_ptr<OMArray<float>>>::
+operator()(size_t paramIdx, const std::string &paramName);
+
+template <>
+std::shared_ptr<OMMatrix<float>> OMWrapperOctave::ParamReader<std::shared_ptr<OMMatrix<float>>>::
+operator()(size_t paramIdx, const std::string &paramName);
 
 
 #define OM_RESULT_OCTAVE(w,code) (code)()
