@@ -75,72 +75,64 @@ void OMWrapperOctave::SendFailure(const std::string &exceptionMessage, const std
 }
 
 template <>
-bool OMWrapperOctave::ParamReader<bool>::operator()(size_t paramIdx, const std::string &paramName)
+bool OMWrapperOctave::ParamReader<bool>::TryRead(size_t paramIdx, const std::string &paramName, bool &success, bool getData)
 {
 	CheckParameterIdx(paramIdx, paramName);
 
 	if (!(*w.currentArgs)(paramIdx).is_bool_type())
 	{
-		std::stringstream ss;
-		ss << "Expected bool type for parameter " << paramName << " at index " << paramIdx;
-		ss << " but got " << (*w.currentArgs)(paramIdx).type_name();
-		throw std::runtime_error(ss.str());
+		success = false;
+		return false;
 	}
 
 	return (*w.currentArgs)(paramIdx).is_true();
 }
 
 template <>
-int OMWrapperOctave::ParamReader<int>::operator()(size_t paramIdx, const std::string &paramName)
+int OMWrapperOctave::ParamReader<int>::TryRead(size_t paramIdx, const std::string &paramName, bool &success, bool getData)
 {
 	CheckParameterIdx(paramIdx, paramName);
 
 	if (!(*w.currentArgs)(paramIdx).is_scalar_type())
 	{
-		std::stringstream ss;
-		ss << "Expected scalar type for parameter " << paramName << " at index " << paramIdx;
-		ss << " but got " << (*w.currentArgs)(paramIdx).type_name();
-		throw std::runtime_error(ss.str());
+		success = false;
+		return 0;
 	}
 
 	return (*w.currentArgs)(paramIdx).int32_scalar_value();
 }
 
 template <>
-float OMWrapperOctave::ParamReader<float>::operator()(size_t paramIdx, const std::string &paramName)
+float OMWrapperOctave::ParamReader<float>::TryRead(size_t paramIdx, const std::string &paramName, bool &success, bool getData)
 {
 	CheckParameterIdx(paramIdx, paramName);
 
 	if (!(*w.currentArgs)(paramIdx).is_numeric_type())
 	{
-		std::stringstream ss;
-		ss << "Expected numeric type for parameter " << paramName << " at index " << paramIdx;
-		ss << " but got " << (*w.currentArgs)(paramIdx).type_name();
-		throw std::runtime_error(ss.str());
+		success = false;
+		return 0.0f;
 	}
 
 	return (*w.currentArgs)(paramIdx).float_value();
 }
 
 template <>
-std::string OMWrapperOctave::ParamReader<std::string>::operator()(size_t paramIdx, const std::string &paramName)
+std::string OMWrapperOctave::ParamReader<std::string>::TryRead(size_t paramIdx, const std::string &paramName, bool &success, bool getData)
 {
 	CheckParameterIdx(paramIdx, paramName);
 
 	if (!(*w.currentArgs)(paramIdx).is_string())
 	{
-		std::stringstream ss;
-		ss << "Expected string for parameter " << paramName << " at index " << paramIdx;
-		ss << " but got " << (*w.currentArgs)(paramIdx).type_name();
-		throw std::runtime_error(ss.str());
+		success = false;
+		return std::string();
 	}
 
 	return (*w.currentArgs)(paramIdx).string_value();
 }
 
 template <>
-std::shared_ptr<OMArray<float>> OMWrapperOctave::ParamReader<std::shared_ptr<OMArray<float>>>::
-operator()(size_t paramIdx, const std::string &paramName)
+std::shared_ptr<OMArray<float>>
+OMWrapperOctave::ParamReader<std::shared_ptr<OMArray<float>>>::TryRead(size_t paramIdx, const std::string &paramName, bool &success, bool getData)
 {
 	CheckParameterIdx(paramIdx, paramName);
 
@@ -149,11 +141,12 @@ operator()(size_t paramIdx, const std::string &paramName)
 
 	if (av_dims.length() != 2)
 	{
-		std::stringstream ss;
-		ss << "Expected a 1D vector for parameter " << paramName << " at index " << paramIdx;
-		ss << " but got " << (*w.currentArgs)(paramIdx).type_name();
-		throw std::runtime_error(ss.str());
+		success = false;
+		return std::shared_ptr<OMArray<float>>();
 	}
+
+	if (!getData)
+		return std::shared_ptr<OMArray<float>>();
 
 	std::vector<float> vecd(av_dims(0) * av_dims(1));
 	for (int i = 0; i < av_dims(0); ++i)
@@ -168,8 +161,8 @@ operator()(size_t paramIdx, const std::string &paramName)
 }
 
 template <>
-std::shared_ptr<OMMatrix<float>> OMWrapperOctave::ParamReader<std::shared_ptr<OMMatrix<float>>>::
-operator()(size_t paramIdx, const std::string &paramName)
+std::shared_ptr<OMMatrix<float>>
+OMWrapperOctave::ParamReader<std::shared_ptr<OMMatrix<float>>>::TryRead(size_t paramIdx, const std::string &paramName, bool &success, bool getData)
 {
 	CheckParameterIdx(paramIdx, paramName);
 
@@ -179,11 +172,12 @@ operator()(size_t paramIdx, const std::string &paramName)
 	int d = av_dims.length();
 	if (d <= 1 || d > 3)
 	{
-		std::stringstream ss;
-		ss << "Unsupported array with dimension depth " << d << " for parameter " << paramName
-		   << " at index " << paramIdx;
-		throw std::runtime_error(ss.str());
+		success = false;
+		return std::shared_ptr<OMMatrix<float>>();
 	}
+
+	if (!getData)
+		return std::shared_ptr<OMMatrix<float>>();
 
 	int *dims = new int[3];
 	dims[0] = av.dim1();
