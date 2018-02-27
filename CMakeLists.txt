@@ -12,7 +12,7 @@ set(OMW_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src
 
 # Mathematica library
 if(Mathematica_FOUND)
-	add_library(omw_mathematica STATIC
+	add_library(omw_mathematica STATIC EXCLUDE_FROM_ALL
 		${OMW_SRC_DIR}/om_mathematica.cpp
 		${OMW_SRC_DIR}/om_wrapper_base.cpp)
 
@@ -123,7 +123,7 @@ endif()
 
 # Octave library
 if(Octave_FOUND OR OCTAVE_EXECUTABLE)
-	add_library(omw_octave STATIC
+	add_library(omw_octave STATIC EXCLUDE_FROM_ALL
 		${OMW_SRC_DIR}/om_octave.cpp
 		${OMW_SRC_DIR}/om_wrapper_base.cpp)
 
