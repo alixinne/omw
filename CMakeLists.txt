@@ -27,6 +27,9 @@ if(Mathematica_FOUND)
 	# C++ 14 required
 	set_property(TARGET omw_mathematica PROPERTY CXX_STANDARD 14)
 
+	# -Wall
+	target_compile_options(omw_mathematica PRIVATE "-Wall")
+
 	# We need to put some variables in the CMakeCache because
 	# omw_add_mathematica will be invoked from an outer scope
 	set(MATHEMATICA_VARIABLES Mathematica_SYSTEM_ID Mathematica_USERBASE_DIR)
@@ -129,6 +132,9 @@ if(Octave_FOUND OR OCTAVE_EXECUTABLE)
 
 	# C++ 14 required
 	set_property(TARGET omw_octave PROPERTY CXX_STANDARD 14)
+
+	# -Wall
+	target_compile_options(omw_octave PRIVATE "-Wall")
 
 	# We need to put OCTAVE_OCT_FILE_DIR in the CMakeCache because
 	# omw_add_octave will be invoked from an outer scope
