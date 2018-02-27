@@ -9,7 +9,7 @@
 #include <parse.h>
 
 /**
- * Represents the interface wrapper for Mathematica (MathLink) code.
+ * @brief Represents the interface wrapper for Mathematica (MathLink) code.
  */
 class OMWrapperOctave : public OMWrapperBase
 {
@@ -23,7 +23,7 @@ class OMWrapperOctave : public OMWrapperBase
 	public:
 
 	/**
-	 * Constructs a new Octave interface wrapper
+	 * @brief Constructs a new Octave interface wrapper
 	 * @param sym             Symbol to use for locating the containing .so/dll
 	 * @param userInitializer User initialization function.
 	 */
@@ -46,7 +46,7 @@ class OMWrapperOctave : public OMWrapperBase
 	void SetAutoload(const std::string &name);
 
 	/**
-	 * Base class for wrapper parameter readers
+	 * @brief Base class for wrapper parameter readers
 	 */
 	struct ParamReaderBase
 	{
@@ -55,14 +55,14 @@ class OMWrapperOctave : public OMWrapperBase
 		OMWrapperOctave &w;
 
 		/**
-		 * Initializes a new instance of the ParamReaderBase class
+		 * @brief Initializes a new instance of the ParamReaderBase class
 		 *
 		 * @param w Wrapper this instance is reading parameters from.
 		 */
 		ParamReaderBase(OMWrapperOctave &w);
 
 		/**
-		 * Ensures the current parameter matches the parameter requested by the caller.
+		 * @brief Ensures the current parameter matches the parameter requested by the caller.
 		 * @param paramIdx  Ordinal index of the parameter
 		 * @param paramName User-friendly name of the parameter
 		 * @throws std::runtime_error See GetParam for details.
@@ -71,13 +71,13 @@ class OMWrapperOctave : public OMWrapperBase
 	};
 
 	/**
-	 * Template declaration for parameter readers
+	 * @brief Template declaration for parameter readers
 	 */
 	template<class T, typename Enable = void>
 	struct ParamReader : public ParamReaderBase {};
 
 	/**
-	 * Atomic parameter reader template
+	 * @brief Atomic parameter reader template
 	 */
 	template<class T0>
 	struct ParamReader<T0, typename std::enable_if<is_simple_param_type<T0>::value>::type> : public ParamReaderBase
@@ -115,7 +115,7 @@ class OMWrapperOctave : public OMWrapperBase
 	};
 
 	/**
-	 * Optional parameter reader template
+	 * @brief Optional parameter reader template
 	 */
 	template<class T>
 	struct ParamReader<boost::optional<T>> : public ParamReaderBase
@@ -138,7 +138,7 @@ class OMWrapperOctave : public OMWrapperBase
 	};
 
 	/**
-	 * Tuple parameter reader template
+	 * @brief Tuple parameter reader template
 	 */
 	template<class... Types>
 	struct ParamReader<std::tuple<Types...>, typename std::enable_if<(sizeof...(Types) > 1)>::type> : public ParamReaderBase
@@ -151,7 +151,7 @@ class OMWrapperOctave : public OMWrapperBase
 
 		private:
 		/**
-		 * Implementation of GetTupleParam variadic template function
+		 * @brief Implementation of GetTupleParam variadic template function
 		 */
 		template <std::size_t... I>
 		decltype(auto) GetTupleParamImpl(size_t paramIdx, const std::string &paramName, std::index_sequence<I...>)
@@ -182,7 +182,7 @@ class OMWrapperOctave : public OMWrapperBase
 	};
 
 	/**
-	 * Variant parameter reader template
+	 * @brief Variant parameter reader template
 	 */
 	template<class... Types>
 	struct ParamReader<boost::variant<Types...>, typename std::enable_if<(sizeof...(Types) > 0)>::type> : public ParamReaderBase
@@ -227,7 +227,7 @@ class OMWrapperOctave : public OMWrapperBase
 	};
 
 	/**
-	 * Gets a parameter at the given index.
+	 * @brief Gets a parameter at the given index.
 	 *
 	 * @param paramIdx  Ordinal index of the parameter
 	 * @param paramName User-friendly name for the parameter
@@ -242,7 +242,7 @@ class OMWrapperOctave : public OMWrapperBase
 	}
 
 	/**
-	 * Runs a function using the state of the link associated with this interface
+	 * @brief Runs a function using the state of the link associated with this interface
 	 * wrapper.
 	 * @param args Octave arguments to the function
 	 * @param fun Function to invoke when the link is ready.
@@ -251,7 +251,7 @@ class OMWrapperOctave : public OMWrapperBase
 	octave_value_list RunFunction(const octave_value_list &args, std::function<void(OMWrapperOctave &)> fun);
 
 	/**
-	 * Sends a failure message on the link object to notify of a failure.
+	 * @brief Sends a failure message on the link object to notify of a failure.
 	 * @param exceptionMessage Text to send in the message
 	 * @param messageName      Name of the format string to use
 	 */

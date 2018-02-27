@@ -5,7 +5,7 @@
 #include <vector>
 
 /**
- * Represents a 1D array without managing its memory, to be used with Octave
+ * @brief Represents a 1D array without managing its memory, to be used with Octave
  * and Mathematica APIs.
  */
 template <typename T> class OMArray
