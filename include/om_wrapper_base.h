@@ -1,6 +1,7 @@
 #ifndef _OM_WRAPPER_BASE_H_
 #define _OM_WRAPPER_BASE_H_
 
+#include <type_traits>
 #include <functional>
 #include <tuple>
 
