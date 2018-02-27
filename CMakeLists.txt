@@ -37,7 +37,7 @@ if(Mathematica_FOUND)
 
 	# Helper function to create a Mathematica target
 	function(omw_add_mathematica target_name)
-		cmake_parse_arguments(OMW_ADD "" "PACKAGE_NAME;INSTALL" "MPREP_SOURCES;SOURCES;LINK_LIBRARIES" ${ARGN})
+		cmake_parse_arguments(OMW_ADD "" "PACKAGE_NAME;INSTALL" "MPREP_SOURCES;SOURCES;LINK_LIBRARIES;COMPILE_OPTIONS" ${ARGN})
 
 		message(STATUS "Creating Mathematica target ${target_name}")
 
@@ -65,6 +65,9 @@ if(Mathematica_FOUND)
 
 		# Add its link libraries
 		target_link_libraries(${target_name} ${OMW_ADD_LINK_LIBRARIES} omw_mathematica)
+
+		# Add compile options
+		target_compile_options(${target_name} PRIVATE ${OMW_ADD_COMPILE_OPTIONS})
 
 		# On Windows, create a graphical executable
 		if(WIN32)
@@ -134,7 +137,7 @@ if(Octave_FOUND OR OCTAVE_EXECUTABLE)
 
 	# Helper function to create an Octave target
 	function(omw_add_octave target_name)
-		cmake_parse_arguments(OMW_ADD "" "INSTALL" "SOURCES;LINK_LIBRARIES" ${ARGN})
+		cmake_parse_arguments(OMW_ADD "" "INSTALL" "SOURCES;LINK_LIBRARIES;COMPILE_OPTIONS" ${ARGN})
 
 		message(STATUS "Creating Octave target ${target_name}")
 
@@ -144,6 +147,9 @@ if(Octave_FOUND OR OCTAVE_EXECUTABLE)
 
 		# C++ 14 required
 		set_property(TARGET ${target_name} PROPERTY CXX_STANDARD 14)
+
+		# Add compile options
+		target_compile_options(${target_name} PRIVATE ${OMW_ADD_COMPILE_OPTIONS})
 
 		# Create install target if requested
 		if(OMW_ADD_INSTALL)
