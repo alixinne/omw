@@ -32,7 +32,7 @@ if(Mathematica_FOUND)
 
 	# We need to put some variables in the CMakeCache because
 	# omw_add_mathematica will be invoked from an outer scope
-	set(MATHEMATICA_VARIABLES Mathematica_SYSTEM_ID Mathematica_USERBASE_DIR)
+	set(MATHEMATICA_VARIABLES Mathematica_SYSTEM_ID Mathematica_BASE_DIR)
 	foreach(VAR_NAME ${MATHEMATICA_VARIABLES})
 		set(${VAR_NAME} ${${VAR_NAME}}
 			CACHE PATH "Mathematica ${VAR_NAME}" FORCE)
@@ -103,7 +103,7 @@ if(Mathematica_FOUND)
 		# Make an installation target
 		if(OMW_ADD_INSTALL)
 			install(DIRECTORY ${PACKAGE_TARGET_DIR}
-					DESTINATION ${Mathematica_USERBASE_DIR}/Applications
+					DESTINATION ${Mathematica_BASE_DIR}/Applications
 					COMPONENT ${OMW_ADD_INSTALL}
 					USE_SOURCE_PERMISSIONS)
 		endif()
