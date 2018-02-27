@@ -16,14 +16,14 @@ class OMWrapperBase
 
 	public:
 	/**
-	 * Initializes a new instance of the base wrapper class.
+	 * @brief Initializes a new instance of the base wrapper class.
 	 * @param userInitializer User-defined initialization function to invoke
 	 *                        when the wrapper is constructed.
 	 */
 	OMWrapperBase(std::function<void(void)> &&userInitializer);
 
 	/**
-	 * Ensures the user initialization routine has been called.
+	 * @brief Ensures the user initialization routine has been called.
 	 */
 	void CheckInitialization();
 };

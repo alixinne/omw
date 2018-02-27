@@ -6,7 +6,7 @@
 #include "mathlink.h"
 
 /**
- * Represents the interface wrapper for Mathematica (MathLink) code.
+ * @brief Represents the interface wrapper for Mathematica (MathLink) code.
  */
 class OMWrapperMathematica : public OMWrapperBase
 {
@@ -22,7 +22,7 @@ class OMWrapperMathematica : public OMWrapperBase
 	MLINK &link;
 
 	/**
-	 * Constructs a new Mathematica interface wrapper
+	 * @brief Constructs a new Mathematica interface wrapper
 	 * @param mathNamespace   Name of the namespace where symbols and messages are defined
 	 * @param link            Link object to use to communicate with the Kernel
 	 * @param userInitializer User initialization function.
@@ -31,7 +31,7 @@ class OMWrapperMathematica : public OMWrapperBase
 			  std::function<void(void)> userInitializer = std::function<void(void)>());
 
 	/**
-	 * Base class for wrapper parameter readers
+	 * @brief Base class for wrapper parameter readers
 	 */
 	struct ParamReaderBase
 	{
@@ -40,14 +40,14 @@ class OMWrapperMathematica : public OMWrapperBase
 		OMWrapperMathematica &w;
 
 		/**
-		 * Initializes a new instance of the ParamReaderBase class
+		 * @brief Initializes a new instance of the ParamReaderBase class
 		 *
 		 * @param w Wrapper this instance is reading parameters from.
 		 */
 		ParamReaderBase(OMWrapperMathematica &w);
 
 		/**
-		 * Ensures the current parameter matches the parameter requested by the caller.
+		 * @brief Ensures the current parameter matches the parameter requested by the caller.
 		 * @param paramIdx  Ordinal index of the parameter
 		 * @param paramName User-friendly name of the parameter
 		 * @throws std::runtime_error See GetParam for details.
@@ -56,14 +56,14 @@ class OMWrapperMathematica : public OMWrapperBase
 	};
 
 	/**
-	 * Template declaration for parameter readers
+	 * @brief Template declaration for parameter readers
 	 */
 	template <class T, typename Enable = void> struct ParamReader : public ParamReaderBase
 	{
 	};
 
 	/**
-	 * Atomic parameter reader template
+	 * @brief Atomic parameter reader template
 	 */
 	template <class T0>
 	struct ParamReader<T0, typename std::enable_if<is_simple_param_type<T0>::value>::type> : public ParamReaderBase
@@ -99,7 +99,7 @@ class OMWrapperMathematica : public OMWrapperBase
 	};
 
 	/**
-	 * Optional parameter reader template
+	 * @brief Optional parameter reader template
 	 */
 	template <class T> struct ParamReader<boost::optional<T>> : public ParamReaderBase
 	{
@@ -160,7 +160,7 @@ class OMWrapperMathematica : public OMWrapperBase
 	};
 
 	/**
-	 * Tuple parameter reader template
+	 * @brief Tuple parameter reader template
 	 */
 	template <class... Types>
 	struct ParamReader<std::tuple<Types...>, typename std::enable_if<(sizeof...(Types) > 1)>::type>
@@ -172,7 +172,7 @@ class OMWrapperMathematica : public OMWrapperBase
 
 		private:
 		/**
-		 * Implementation of GetTupleParam variadic template function
+		 * @brief Implementation of GetTupleParam variadic template function
 		 */
 		template <std::size_t... I>
 		decltype(auto)
@@ -221,7 +221,7 @@ class OMWrapperMathematica : public OMWrapperBase
 	};
 
 	/**
-	 * Variant parameter reader template
+	 * @brief Variant parameter reader template
 	 */
 	template<class... Types>
 	struct ParamReader<boost::variant<Types...>, typename std::enable_if<(sizeof...(Types) > 0)>::type> : public ParamReaderBase
@@ -266,7 +266,7 @@ class OMWrapperMathematica : public OMWrapperBase
 	};
 
 	/**
-	 * Gets a parameter at the given index.
+	 * @brief Gets a parameter at the given index.
 	 *
 	 * @param paramIdx  Ordinal index of the parameter
 	 * @param paramName User-friendly name for the parameter
@@ -281,7 +281,7 @@ class OMWrapperMathematica : public OMWrapperBase
 	}
 
 	/**
-	 * Runs a function using the state of the link associated with this interface
+	 * @brief Runs a function using the state of the link associated with this interface
 	 * wrapper.
 	 * @param fun Function to invoke when the link is ready.
 	 * @return true
@@ -289,13 +289,13 @@ class OMWrapperMathematica : public OMWrapperBase
 	bool RunFunction(std::function<void(OMWrapperMathematica &)> fun);
 
 	/**
-	 * Evaluates the given function, assuming its execution returns a result
+	 * @brief Evaluates the given function, assuming its execution returns a result
 	 * @param fun Code to execute to return the result
 	 */
 	void EvaluateResult(std::function<void(void)> fun);
 
 	/**
-	 * Sends a failure message on the link object to notify of a failure.
+	 * @brief Sends a failure message on the link object to notify of a failure.
 	 * @param exceptionMessage Text to send in the message
 	 * @param messageName      Name of the format string to use
 	 */
