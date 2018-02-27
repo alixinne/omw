@@ -102,10 +102,16 @@ if(Mathematica_FOUND)
 
 		# Make an installation target
 		if(OMW_ADD_INSTALL)
+			set(TARGET_EXCLUDE $<TARGET_FILE:${target_name}>)
 			install(DIRECTORY ${PACKAGE_TARGET_DIR}
 					DESTINATION ${Mathematica_BASE_DIR}/Applications
 					COMPONENT ${OMW_ADD_INSTALL}
-					USE_SOURCE_PERMISSIONS)
+					USE_SOURCE_PERMISSIONS
+					PATTERN ${target_name} EXCLUDE)
+
+			install(TARGETS ${target_name}
+					RUNTIME DESTINATION ${Mathematica_BASE_DIR}/Applications/${OMW_ADD_PACKAGE_NAME}/${Mathematica_SYSTEM_ID}
+					COMPONENT ${OMW_ADD_INSTALL})
 		endif()
 	endfunction()
 else()
