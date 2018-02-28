@@ -32,7 +32,7 @@ if(Mathematica_FOUND)
 
   # We need to put some variables in the CMakeCache because
   # omw_add_mathematica will be invoked from an outer scope
-  set(MATHEMATICA_VARIABLES Mathematica_SYSTEM_ID Mathematica_BASE_DIR)
+  set(MATHEMATICA_VARIABLES Mathematica_SYSTEM_ID Mathematica_BASE_DIR Mathematica_USERBASE_DIR)
   foreach(VAR_NAME ${MATHEMATICA_VARIABLES})
     set(${VAR_NAME} ${${VAR_NAME}}
       CACHE PATH "Mathematica ${VAR_NAME}" FORCE)
@@ -40,7 +40,7 @@ if(Mathematica_FOUND)
 
   # Helper function to create a Mathematica target
   function(omw_add_mathematica target_name)
-    cmake_parse_arguments(OMW_ADD "" "PACKAGE_NAME;INSTALL"
+    cmake_parse_arguments(OMW_ADD "USER_INSTALL" "PACKAGE_NAME;INSTALL"
       "MPREP_SOURCES;SOURCES;LINK_LIBRARIES;COMPILE_OPTIONS" ${ARGN})
 
     message(STATUS "Creating Mathematica target ${target_name}")
@@ -105,14 +105,21 @@ if(Mathematica_FOUND)
     # Make an installation target
     if(OMW_ADD_INSTALL)
       set(TARGET_EXCLUDE $<TARGET_FILE:${target_name}>)
+
+      if(OMW_ADD_USER_INSTALL)
+        set(INSTALL_DESTINATION ${Mathematica_USERBASE_DIR})
+      else()
+        set(INSTALL_DESTINATION ${Mathematica_BASE_DIR})
+      endif()
+
       install(DIRECTORY ${PACKAGE_TARGET_DIR}
-          DESTINATION ${Mathematica_BASE_DIR}/Applications
+          DESTINATION ${INSTALL_DESTINATION}/Applications
           COMPONENT ${OMW_ADD_INSTALL}
           USE_SOURCE_PERMISSIONS
           PATTERN ${target_name} EXCLUDE)
 
       install(TARGETS ${target_name}
-          RUNTIME DESTINATION ${Mathematica_BASE_DIR}/Applications/${OMW_ADD_PACKAGE_NAME}/${Mathematica_SYSTEM_ID}
+          RUNTIME DESTINATION ${INSTALL_DESTINATION}/Applications/${OMW_ADD_PACKAGE_NAME}/${Mathematica_SYSTEM_ID}
           COMPONENT ${OMW_ADD_INSTALL})
     endif()
   endfunction()
@@ -151,7 +158,7 @@ if(Octave_FOUND OR OCTAVE_EXECUTABLE)
 
   # Helper function to create an Octave target
   function(omw_add_octave target_name)
-    cmake_parse_arguments(OMW_ADD "" "INSTALL" "SOURCES;LINK_LIBRARIES;COMPILE_OPTIONS" ${ARGN})
+    cmake_parse_arguments(OMW_ADD "USER_INSTALL" "INSTALL" "SOURCES;LINK_LIBRARIES;COMPILE_OPTIONS" ${ARGN})
 
     message(STATUS "Creating Octave target ${target_name}")
 
@@ -167,8 +174,15 @@ if(Octave_FOUND OR OCTAVE_EXECUTABLE)
 
     # Create install target if requested
     if(OMW_ADD_INSTALL)
+      if(OMW_ADD_USER_INSTALL)
+        set(INSTALL_DESTINATION ${OCTAVE_OCT_FILE_DIR})
+      else()
+        get_filename_component(INSTALL_DESTINATION_ARCH ${OCTAVE_OCT_FILE_DIR} NAME)
+        set(INSTALL_DESTINATION $ENV{HOME}/.octave/oct/${INSTALL_DESTINATION_ARCH})
+      endif()
+
       install(TARGETS ${target_name}
-          DESTINATION ${OCTAVE_OCT_FILE_DIR}
+          DESTINATION ${INSTALL_DESTINATION}
           COMPONENT ${OMW_ADD_INSTALL})
     endif()
   endfunction()
