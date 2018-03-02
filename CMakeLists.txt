@@ -67,6 +67,9 @@ if(Mathematica_FOUND)
       ${OMW_ADD_SOURCES}
       ${ML_MPREP_TARGETS})
 
+    # C++ 14 required
+    set_property(TARGET ${target_name} PROPERTY CXX_STANDARD 14)
+
     # Add its link libraries
     target_link_libraries(${target_name} ${OMW_ADD_LINK_LIBRARIES} omw_mathematica)
 
