@@ -40,7 +40,7 @@ if(Mathematica_FOUND)
 
   # Helper function to create a Mathematica target
   function(omw_add_mathematica target_name)
-    cmake_parse_arguments(OMW_ADD "USER_INSTALL" "PACKAGE_NAME;INSTALL"
+    cmake_parse_arguments(OMW_ADD "USER_INSTALL" "PACKAGE_NAME;INSTALL;TARGET_PACKAGE_DIR"
       "MPREP_SOURCES;SOURCES;LINK_LIBRARIES;COMPILE_OPTIONS" ${ARGN})
 
     message(STATUS "Creating Mathematica target ${target_name}")
@@ -87,7 +87,7 @@ if(Mathematica_FOUND)
     endif()
 
     # Create the install tree in the build directory
-    set(PACKAGE_TARGET_DIR ${CMAKE_CURRENT_BINARY_DIR}/${OMW_ADD_PACKAGE_NAME})
+    set(PACKAGE_TARGET_DIR ${OMW_ADD_TARGET_PACKAGE_DIR}/${OMW_ADD_PACKAGE_NAME})
     execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory "${PACKAGE_TARGET_DIR}")
 
     # Configure main package file
