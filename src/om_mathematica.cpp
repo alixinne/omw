@@ -164,6 +164,37 @@ int OMWrapperMathematica::ParamReader<int>::TryRead(size_t paramIdx, const std::
 }
 
 template <>
+unsigned int OMWrapperMathematica::ParamReader<unsigned int>::TryRead(size_t paramIdx, const std::string &paramName, bool &success, bool getData)
+{
+	CheckParameterIdx(paramIdx, paramName);
+
+	if (getData)
+	{
+		// Get the integer value
+		mlint64 paramValue(0);
+
+		if (!MLGetInteger64(w.link, &paramValue))
+		{
+			MLClearError(w.link);
+
+			success = false;
+			return paramValue;
+		}
+
+		w.currentParamIdx++;
+
+		return static_cast<unsigned int>(paramValue);
+	}
+	else
+	{
+		// Test the value is an int
+		success = (MLGetType(w.link) == MLTKINT);
+
+		return 0;
+	}
+}
+
+template <>
 float OMWrapperMathematica::ParamReader<float>::TryRead(size_t paramIdx, const std::string &paramName, bool &success, bool getData)
 {
 	CheckParameterIdx(paramIdx, paramName);
