@@ -312,6 +312,9 @@ template <>
 int OMWrapperMathematica::ParamReader<int>::TryRead(size_t paramIdx, const std::string &paramName, bool &success, bool getData);
 
 template <>
+unsigned int OMWrapperMathematica::ParamReader<unsigned int>::TryRead(size_t paramIdx, const std::string &paramName, bool &success, bool getData);
+
+template <>
 float OMWrapperMathematica::ParamReader<float>::TryRead(size_t paramIdx, const std::string &paramName, bool &success, bool getData);
 
 template <>
