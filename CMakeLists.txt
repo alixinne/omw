@@ -10,6 +10,8 @@ set(OMW_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
 set(OMW_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src
   CACHE PATH "Path to the omw sources")
 
+option(OMW_DEVELOP_BUILD "Enable building the development library" OFF)
+
 # Mathematica library
 if(Mathematica_FOUND)
   add_library(omw_mathematica STATIC EXCLUDE_FROM_ALL
@@ -203,4 +205,32 @@ else()
   function(omw_add_octave target_name)
     message(STATUS "Skipping Octave target ${target_name}")
   endfunction()
+endif()
+
+if(OMW_DEVELOP_BUILD)
+  if(NOT Mathematica_FOUND)
+    message(FATAL_ERROR "Trying to create the development build, but Wolfram Mathematica is not available")
+  endif()
+
+  if (NOT (Octave_FOUND OR OCTAVE_EXECUTABLE))
+    message(FATAL_ERROR "Trying to create the development build, but Octave is not available")
+  endif()
+
+  omw_add_mathematica(omw_test_mathematica
+    PACKAGE_NAME OMW
+    MPREP_SOURCES ${OMW_SRC_DIR}/omw_test.tm
+    SOURCES ${OMW_SRC_DIR}/omw_test.cpp)
+
+  omw_add_octave(omw_test_octave
+    OCT_NAME omw_tests
+    SOURCES ${OMW_SRC_DIR}/omw_test.cpp)
+
+  # Test procedures
+  enable_testing()
+  file(GLOB TEST_FILES ${CMAKE_SOURCE_DIR}/t/*.t)
+  foreach(TEST_FILE ${TEST_FILES})
+    get_filename_component(TEST_FILE_NAME ${TEST_FILE} NAME_WE)
+    add_test(NAME ${TEST_FILE_NAME} COMMAND prove -v --color ${TEST_FILE} :: --path ${CMAKE_CURRENT_BINARY_DIR} --octave-pkg omw_tests --mathematica-pkg OMW
+      WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+  endforeach()
 endif()
