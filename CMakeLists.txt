@@ -87,7 +87,11 @@ if(Mathematica_FOUND)
     endif()
 
     # Create the install tree in the build directory
-    set(PACKAGE_TARGET_DIR ${OMW_ADD_TARGET_PACKAGE_DIR}/${OMW_ADD_PACKAGE_NAME})
+    if(OMW_ADD_TARGET_PACKAGE_DIR)
+      set(PACKAGE_TARGET_DIR ${OMW_ADD_TARGET_PACKAGE_DIR}/${OMW_ADD_PACKAGE_NAME})
+    else()
+      set(PACKAGE_TARGET_DIR ${CMAKE_BINARY_DIR}/${OMW_ADD_PACKAGE_NAME})
+    endif()
     execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory "${PACKAGE_TARGET_DIR}")
 
     # Configure main package file
