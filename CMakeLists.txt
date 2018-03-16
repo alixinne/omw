@@ -1,5 +1,10 @@
 cmake_minimum_required(VERSION 3.1)
 
+include(CMakeDependentOption)
+include(GNUInstallDirs)
+
+project(omw)
+
 # Load Octave and Mathematica packages from cmake/
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 find_package(Mathematica COMPONENTS MathLink)
@@ -11,6 +16,7 @@ set(OMW_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src
   CACHE PATH "Path to the omw sources")
 
 option(OMW_DEVELOP_BUILD "Enable building the development library" OFF)
+option(OMW_BUILD_DOCS "Build the documentation of OMW using Doxygen" OFF)
 
 # Mathematica library
 if(Mathematica_FOUND)
@@ -109,7 +115,7 @@ if(Mathematica_FOUND)
     add_custom_command(TARGET ${target_name} POST_BUILD
       COMMAND ${CMAKE_COMMAND} -E make_directory "${PACKAGE_TARGET_DIR}/${Mathematica_SYSTEM_ID}/"
       COMMAND ${CMAKE_COMMAND} -E copy "$<TARGET_FILE:${target_name}>"
-                                       "${PACKAGE_TARGET_DIR}/${Mathematica_SYSTEM_ID}/")
+      "${PACKAGE_TARGET_DIR}/${Mathematica_SYSTEM_ID}/")
 
     # Make an installation target
     if(OMW_ADD_INSTALL)
@@ -122,14 +128,14 @@ if(Mathematica_FOUND)
       endif()
 
       install(DIRECTORY ${PACKAGE_TARGET_DIR}
-          DESTINATION ${INSTALL_DESTINATION}/Applications
-          COMPONENT ${OMW_ADD_INSTALL}
-          USE_SOURCE_PERMISSIONS
-          PATTERN ${target_name} EXCLUDE)
+        DESTINATION ${INSTALL_DESTINATION}/Applications
+        COMPONENT ${OMW_ADD_INSTALL}
+        USE_SOURCE_PERMISSIONS
+        PATTERN ${target_name} EXCLUDE)
 
       install(TARGETS ${target_name}
-          RUNTIME DESTINATION ${INSTALL_DESTINATION}/Applications/${OMW_ADD_PACKAGE_NAME}/${Mathematica_SYSTEM_ID}
-          COMPONENT ${OMW_ADD_INSTALL})
+        RUNTIME DESTINATION ${INSTALL_DESTINATION}/Applications/${OMW_ADD_PACKAGE_NAME}/${Mathematica_SYSTEM_ID}
+        COMPONENT ${OMW_ADD_INSTALL})
     endif()
   endfunction()
 else()
@@ -196,8 +202,8 @@ if(Octave_FOUND OR OCTAVE_EXECUTABLE)
       endif()
 
       install(TARGETS ${target_name}
-          DESTINATION ${INSTALL_DESTINATION}
-          COMPONENT ${OMW_ADD_INSTALL})
+        DESTINATION ${INSTALL_DESTINATION}
+        COMPONENT ${OMW_ADD_INSTALL})
     endif()
   endfunction()
 else()
@@ -234,3 +240,30 @@ if(OMW_DEVELOP_BUILD)
       WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
   endforeach()
 endif()
+
+# Documentation
+find_package(Doxygen)
+cmake_dependent_option(OMW_BUILD_DOCS
+  "Build the HTML docs" ON
+  "DOXYGEN_FOUND;OMW_BUILD_DOCUMENTATION" OFF)
+
+if(OMW_BUILD_DOCS)
+  message(STATUS "Adding documentation target")
+
+  set(doxy_main_page ${CMAKE_CURRENT_SOURCE_DIR}/README.md)
+  set(doxyfile_in ${CMAKE_CURRENT_SOURCE_DIR}/docs/Doxyfile.in)
+  set(doxyfile ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile)
+
+  configure_file(${doxyfile_in} ${doxyfile} @ONLY)
+
+  add_custom_target(omw_doc ALL
+    COMMAND ${DOXYGEN_EXECUTABLE} ${doxyfile}
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+    COMMENT "Generating API documentation with Doxygen"
+    VERBATIM)
+
+  #install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/html
+  #  COMPONENT omw-docs
+  #  DESTINATION ${CMAKE_INSTALL_DOCDIR})
+endif()
+
