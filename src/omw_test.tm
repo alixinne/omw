@@ -8,3 +8,5 @@ void omw_test_times P(( ));
 :ReturnType:     Manual
 :End:
 
+:Evaluate: OMW::err = "An error occurred: `1`"
+
