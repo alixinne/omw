@@ -3,6 +3,8 @@
 
 #if OMW_MATHEMATICA
 
+#include <sstream>
+
 #include "mathlink.h"
 
 /**
