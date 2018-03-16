@@ -48,7 +48,7 @@ bool OMWrapperMathematica::RunFunction(std::function<void(OMWrapperMathematica &
 			MLPutSymbol(link, "Null");
 		}
 	}
-	catch (std::runtime_error &ex)
+	catch (std::exception &ex)
 	{
 		SendFailure(ex.what());
 	}
@@ -65,12 +65,17 @@ void OMWrapperMathematica::EvaluateResult(std::function<void(void)> fun)
 
 void OMWrapperMathematica::SendFailure(const std::string &exceptionMessage, const std::string &messageName)
 {
-	MLPutFunction(link, "CompoundExpression", 2);
+	MLNewPacket(link);
+	MLPutFunction(link, "EvaluatePacket", 1);
 	MLPutFunction(link, "Message", 2);
 	MLPutFunction(link, "MessageName", 2);
 	MLPutSymbol(link, mathNamespace.c_str());
 	MLPutString(link, messageName.c_str());
 	MLPutString(link, exceptionMessage.c_str());
+	MLFlush(link);
+	MLNextPacket(link);
+
+	MLNewPacket(link);
 	MLPutSymbol(link, "$Failed");
 
 	// Note that SendFailure sends a result

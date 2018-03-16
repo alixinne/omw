@@ -9,7 +9,7 @@ use Getopt::Long;
 require Exporter;
 
 our @ISA = qw(Exporter);
-our @EXPORT = qw(octave_ok mathematica_ok);
+our @EXPORT = qw(octave_ok mathematica_ok octave_fails mathematica_fails);
 
 our $_initialized = 0;
 our $_octave_pkg_name;
@@ -31,7 +31,7 @@ sub binary_path {
 }
 
 sub command_run {
-	my ($cmd, $code, $message) = @_;
+	my ($cmd, $code, $message, $fails) = @_;
 	# Print the code to be executed
 	SKIP: {
 		eval {
@@ -58,15 +58,20 @@ sub command_run {
 			diag $output;
 
 			# Print output
-			is($exit_status, 0, $message);
+			if ($fails) {
+				isnt($exit_status, 0, $message);
+			} else {
+				is($exit_status, 0, $message);
+			}
 		};
 
 		skip("$message (skipped because $@)", 1) if $@;
 	}
 }
 
-sub octave_ok {
-	my ($message, $code) = @_;
+sub octave_prepare {
+	my ($message, $code, @extra) = @_;
+
 	$message = "Octave: $message";
 
 	# Add code to load the library
@@ -84,11 +89,21 @@ $code
 OCTAVE_CODE
 	}
 
-	command_run 'octave-cli', $code, $message;
+	return ($message, $code, @extra);
 }
 
-sub mathematica_ok {
-	my ($message, $code) = @_;
+sub octave_ok {
+	my ($message, $code) = octave_prepare(@_);
+	command_run 'octave-cli', $code, $message, 0;
+}
+
+sub octave_fails {
+	my ($message, $code) = octave_prepare(@_);
+	command_run 'octave-cli', $code, $message, 1;
+}
+
+sub mathematica_prepare {
+	my ($message, $code, @extra) = @_;
 	$message = "Mathematica: $message";
 
 	# Append exit wrapper
@@ -111,7 +126,17 @@ MATHEMATICA_CODE
 	# Reformat code
 	$code =~ s/;(?!\n)/;\n/g;
 
-	command_run 'math', $code, $message;
+	return ($message, $code, @extra);
+}
+
+sub mathematica_ok {
+	my ($message, $code) = mathematica_prepare(@_);
+	command_run 'math', $code, $message, 0;
+}
+
+sub mathematica_fails {
+	my ($message, $code) = mathematica_prepare(@_);
+	command_run 'math', $code, $message, 1;
 }
 
 check_init;
