@@ -16,7 +16,7 @@ set(OMW_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src
   CACHE PATH "Path to the omw sources")
 
 option(OMW_DEVELOP_BUILD "Enable building the development library" OFF)
-option(OMW_BUILD_DOCS "Build the documentation of OMW using Doxygen" OFF)
+option(OMW_BUILD_DOCUMENTATION "Build the documentation of OMW using Doxygen" OFF)
 
 # Mathematica library
 if(Mathematica_FOUND)
@@ -242,28 +242,6 @@ if(OMW_DEVELOP_BUILD)
 endif()
 
 # Documentation
-find_package(Doxygen)
-cmake_dependent_option(OMW_BUILD_DOCS
-  "Build the HTML docs" ON
-  "DOXYGEN_FOUND;OMW_BUILD_DOCUMENTATION" OFF)
-
-if(OMW_BUILD_DOCS)
-  message(STATUS "Adding documentation target")
-
-  set(doxy_main_page ${CMAKE_CURRENT_SOURCE_DIR}/README.md)
-  set(doxyfile_in ${CMAKE_CURRENT_SOURCE_DIR}/docs/Doxyfile.in)
-  set(doxyfile ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile)
-
-  configure_file(${doxyfile_in} ${doxyfile} @ONLY)
-
-  add_custom_target(omw_doc ALL
-    COMMAND ${DOXYGEN_EXECUTABLE} ${doxyfile}
-    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-    COMMENT "Generating API documentation with Doxygen"
-    VERBATIM)
-
-  #install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/html
-  #  COMPONENT omw-docs
-  #  DESTINATION ${CMAKE_INSTALL_DOCDIR})
+if(OMW_BUILD_DOCUMENTATION)
+  add_subdirectory(${OMW_BASE_DIR}/docs)
 endif()
-
