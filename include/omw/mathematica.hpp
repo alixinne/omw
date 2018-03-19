@@ -1,3 +1,10 @@
+/**
+ * @file   omw/mathematica.hpp
+ * @brief  Definition of omw::mathematica
+ * @author Vincent TAVERNIER <vince.tavernier@gmail.com>
+ * @date   2018
+ */
+
 #ifndef _OMW_MATHEMATICA_HPP_
 #define _OMW_MATHEMATICA_HPP_
 
@@ -30,6 +37,7 @@ class mathematica : public wrapper_base
 
 	/**
 	 * @brief Constructs a new Mathematica interface wrapper
+	 *
 	 * @param mathNamespace   Name of the namespace where symbols and messages are defined
 	 * @param link            Link object to use to communicate with the Kernel
 	 * @param userInitializer User initialization function.
@@ -55,8 +63,9 @@ class mathematica : public wrapper_base
 
 		/**
 		 * @brief Ensures the current parameter matches the parameter requested by the caller.
-		 * @param paramIdx  Ordinal index of the parameter
-		 * @param paramName User-friendly name of the parameter
+		 *
+		 * @param  paramIdx           Ordinal index of the parameter
+		 * @param  paramName          User-friendly name of the parameter
 		 * @throws std::runtime_error See GetParam for details.
 		 */
 		void check_parameter_idx(size_t paramIdx, const std::string &paramName);
@@ -75,12 +84,41 @@ class mathematica : public wrapper_base
 	template <class T0>
 	struct param_reader<T0, typename std::enable_if<is_simple_param_type<T0>::value>::type> : public param_reader_base
 	{
+		/// Type of the returned parameter
 		typedef T0 return_type;
 
+		/**
+		 * @brief Initialize a new instance of the param_reader class.
+		 *
+		 * @param w Wrapper to read parameters from.
+		 */
 		param_reader(mathematica &w) : param_reader_base(w) {}
 
+		/**
+		 * @brief Attempts reading a parameter from the associated wrapper.
+		 *
+		 * @param paramIdx  Ordinal index of the parameter in the function call
+		 * @param paramName User-friendly name of the parameter
+		 * @param success   true on success, false on failure
+		 * @param getData   true if the function should attempt to read the parameter data,
+		 *                  false if the caller is just interested in the potential success.
+		 *
+		 *                  Note that if \p getData is true, a call to this function will advance
+		 *                  the current parameter index. If \p getData is false, the wrapper will
+		 *                  not advance.
+		 * @return If \p getData is true and \p success is true, the value of the parameter.
+		 * Otherwise the return value is undefined.
+		 */
 		T0 try_read(size_t paramIdx, const std::string &paramName, bool &success, bool getData);
 
+		/**
+		 * @brief Attempts reading a parameter from the associated wrapper.
+		 *
+		 * @param paramIdx  Ordinal index of the parameter in the function call
+		 * @param paramName User-friendly name of the parameter
+		 * @return Value of the parameter
+		 * @throws std::runtime_error When the actual parameter is not of the requested type
+		 */
 		T0 operator()(size_t paramIdx, const std::string &paramName)
 		{
 			bool success = true;
@@ -96,6 +134,15 @@ class mathematica : public wrapper_base
 			return value;
 		}
 
+		/**
+		 * @brief Tests if the given parameter is of the required type.
+		 *
+		 * This function does not advance the current parameter.
+		 *
+		 * @param paramIdx  Ordinal index of the parameter in the function call
+		 * @param paramName User-friendly name of the parameter
+		 * @return true if the parameter is of the requested type, false otherwise
+		 */
 		bool is_type(size_t paramIdx, const std::string &paramName)
 		{
 			bool success = true;
@@ -108,15 +155,26 @@ class mathematica : public wrapper_base
 	/**
 	 * @brief Optional parameter reader template
 	 */
-	template <class T>
-	struct param_reader<boost::optional<T>> : public
-
-											  param_reader_base
+	template <class T> struct param_reader<boost::optional<T>> : public param_reader_base
 	{
+		/// Type of the returned parameter
 		typedef boost::optional<T> return_type;
 
+		/**
+		 * @brief Initializes a new instance of the param_reader class.
+		 *
+		 * @param w Wrapper to read parameters from.
+		 */
 		param_reader(mathematica &w) : param_reader_base(w) {}
 
+		/**
+		 * @brief Attempts reading a parameter from the associated wrapper.
+		 *
+		 * @param paramIdx  Ordinal index of the parameter in the function call
+		 * @param paramName User-friendly name of the parameter
+		 * @return Value of the parameter
+		 * @throws std::runtime_error When the actual parameter is not of the requested type
+		 */
 		return_type operator()(size_t paramIdx, const std::string &paramName)
 		{
 			check_parameter_idx(paramIdx, paramName);
@@ -178,8 +236,14 @@ class mathematica : public wrapper_base
 	struct param_reader<std::tuple<Types...>, typename std::enable_if<(sizeof...(Types) > 1)>::type>
 	: public param_reader_base
 	{
+		/// Type of the returned parameter
 		typedef std::tuple<Types...> return_type;
 
+		/**
+		 * @brief Initializes a new instance of the param_reader class.
+		 *
+		 * @param w Wrapper to read parameters from.
+		 */
 		param_reader(mathematica &w) : param_reader_base(w) {}
 
 		private:
@@ -194,6 +258,14 @@ class mathematica : public wrapper_base
 		}
 
 		public:
+		/**
+		 * @brief Attempts reading a parameter from the associated wrapper.
+		 *
+		 * @param firstParamIdx Ordinal index of the first parameter in the function call
+		 * @param paramName     User-friendly name of the parameter
+		 * @return Value of the parameter
+		 * @throws std::runtime_error When the actual parameter is not of the requested type
+		 */
 		return_type operator()(size_t firstParamIdx, const std::string &paramName)
 		{
 			// Check first parameter location
@@ -237,13 +309,19 @@ class mathematica : public wrapper_base
 	 */
 	template <class... Types>
 	struct param_reader<boost::variant<Types...>, typename std::enable_if<(sizeof...(Types) > 0)>::type>
-	: public
-
-	  param_reader_base
+	: public param_reader_base
 	{
+		/// Type of the returned parameter
 		typedef boost::variant<Types...> return_type;
+
+		/// Type of this parameter reader
 		typedef param_reader<boost::variant<Types...>, typename std::enable_if<(sizeof...(Types) > 0)>::type> self_type;
 
+		/**
+		 * @brief Initializes a new instance of the param_reader class.
+		 *
+		 * @param w Wrapper to read parameters from.
+		 */
 		param_reader(mathematica &w) : param_reader_base(w) {}
 
 		private:
@@ -272,6 +350,14 @@ class mathematica : public wrapper_base
 		}
 
 		public:
+		/**
+		 * @brief Attempts reading a parameter from the associated wrapper.
+		 *
+		 * @param paramIdx  Ordinal index of the parameter in the function call
+		 * @param paramName User-friendly name of the parameter
+		 * @return Value of the parameter
+		 * @throws std::runtime_error When the actual parameter is not of the requested type
+		 */
 		return_type operator()(size_t paramIdx, const std::string &paramName)
 		{
 			return variant_reader<Types...>(*this, paramIdx, paramName);
@@ -349,7 +435,20 @@ mathematica::param_reader<std::shared_ptr<matrix<float>>>::try_read(size_t param
 																	bool &success, bool getData);
 }
 
+/**
+ * @brief Run code to evaluate the result of a function when called in Mathematica.
+ *
+ * @param w    Wrapper object to invoke the method on
+ * @param code Lambda function with void(void) signature to run
+ */
 #define OM_RESULT_MATHEMATICA(w, code) w.evaluate_result(code)
+
+/**
+ * @brief Run code when called in Mathematica.
+ *
+ * @param w    Wrapper object to invoke the method on
+ * @param code Lambda function with void(void) signature to run
+ */
 #define OM_MATHEMATICA(w, code) (code)()
 
 #else /* OMW_MATHEMATICA */

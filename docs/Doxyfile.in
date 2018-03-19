@@ -4,6 +4,7 @@ STRIP_FROM_PATH        = @PROJECT_SOURCE_DIR@ \
 INPUT                  = @doxy_main_page@ \
                          @PROJECT_SOURCE_DIR@/include \
                          @PROJECT_BINARY_DIR@
+STRIP_FROM_INC_PATH    = @PROJECT_SOURCE_DIR@/include
 FILE_PATTERNS          = *.hpp \
                          *.h \
                          *.cpp
@@ -17,4 +18,4 @@ PREDEFINED             = "OMW_MATHEMATICA=1" \
                          "OMW_OCTAVE=1"
 
 QUIET                  = YES
-
+DISTRIBUTE_GROUP_DOC   = YES

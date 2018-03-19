@@ -1,3 +1,10 @@
+/**
+ * @file   omw/pre.hpp
+ * @brief  Predeclarations for omw
+ * @author Vincent TAVERNIER <vince.tavernier@gmail.com>
+ * @date   2018
+ */
+
 #ifndef _OMW_PRE_HPP_
 #define _OMW_PRE_HPP_
 

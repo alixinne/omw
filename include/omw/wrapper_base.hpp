@@ -1,3 +1,10 @@
+/**
+ * @file   omw/wrapper_base.hpp
+ * @brief  Definition of omw::matrix
+ * @author Vincent TAVERNIER <vince.tavernier@gmail.com>
+ * @date   2018
+ */
+
 #ifndef _OMW_WRAPPER_BASE_HPP_
 #define _OMW_WRAPPER_BASE_HPP_
 

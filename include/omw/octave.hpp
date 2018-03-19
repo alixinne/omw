@@ -1,3 +1,10 @@
+/**
+ * @file   omw/octave.hpp
+ * @brief  Definition of omw::matrix
+ * @author Vincent TAVERNIER <vince.tavernier@gmail.com>
+ * @date   2018
+ */
+
 #ifndef _OMW_OCTAVE_HPP_
 #define _OMW_OCTAVE_HPP_
 
@@ -33,8 +40,18 @@ class octave : public wrapper_base
 	 */
 	octave(void *sym, std::function<void(void)> userInitializer = std::function<void(void)>());
 
+	/**
+	 * @brief Get the result object for the current function call.
+	 *
+	 * @return Reference to the octave_value_list to be returned
+	 */
 	inline octave_value_list &result() { return result_; }
 
+	/**
+	 * @brief Get the arguments object for the current function call.
+	 *
+	 * @return Reference to the octave_value_list that contains the parameters
+	 */
 	inline const octave_value_list &args() { return *current_args_; }
 
 	/**
@@ -87,12 +104,38 @@ class octave : public wrapper_base
 	template <class T0>
 	struct param_reader<T0, typename std::enable_if<is_simple_param_type<T0>::value>::type> : public param_reader_base
 	{
+		/// Type of the returned parameter
 		typedef T0 return_type;
 
+		/**
+		 * @brief Initializes a new instance of the param_reader class.
+		 *
+		 * @param w Wrapper to read parameters from.
+		 */
 		param_reader(octave &w) : param_reader_base(w) {}
 
+		/**
+		 * @brief Attempts reading a parameter from the associated wrapper.
+		 *
+		 * @param paramIdx  Ordinal index of the parameter in the function call
+		 * @param paramName User-friendly name of the parameter
+		 * @param success   true on success, false on failure
+		 * @param getData   true if the function should attempt to read the parameter data,
+		 *                  false if the caller is just interested in the potential success.
+		 *
+		 * @return If \p getData is true and \p success is true, the value of the parameter.
+		 * Otherwise the return value is undefined.
+		 */
 		T0 try_read(size_t paramIdx, const std::string &paramName, bool &success, bool getData);
 
+		/**
+		 * @brief Attempts reading a parameter from the associated wrapper.
+		 *
+		 * @param paramIdx  Ordinal index of the parameter in the function call
+		 * @param paramName User-friendly name of the parameter
+		 * @return Value of the parameter
+		 * @throws std::runtime_error When the actual parameter is not of the requested type
+		 */
 		T0 operator()(size_t paramIdx, const std::string &paramName)
 		{
 			bool success = true;
@@ -108,6 +151,15 @@ class octave : public wrapper_base
 			return value;
 		}
 
+		/**
+		 * @brief Tests if the given parameter is of the required type.
+		 *
+		 * This function does not advance the current parameter.
+		 *
+		 * @param paramIdx  Ordinal index of the parameter in the function call
+		 * @param paramName User-friendly name of the parameter
+		 * @return true if the parameter is of the requested type, false otherwise
+		 */
 		bool is_type(size_t paramIdx, const std::string &paramName)
 		{
 			bool success = true;
@@ -122,10 +174,24 @@ class octave : public wrapper_base
 	 */
 	template <class T> struct param_reader<boost::optional<T>> : public param_reader_base
 	{
+		/// Type of the returned parameter
 		typedef boost::optional<T> return_type;
 
+		/**
+		 * @brief Initializes a new instance of the param_reader class.
+		 *
+		 * @param w Wrapper to read parameters from.
+		 */
 		param_reader(octave &w) : param_reader_base(w) {}
 
+		/**
+		 * @brief Attempts reading a parameter from the associated wrapper.
+		 *
+		 * @param paramIdx  Ordinal index of the parameter in the function call
+		 * @param paramName User-friendly name of the parameter
+		 * @return Value of the parameter
+		 * @throws std::runtime_error When the actual parameter is not of the requested type
+		 */
 		return_type operator()(size_t paramIdx, const std::string &paramName)
 		{
 			if (paramIdx >= size_t(w_.current_args_->length()))
@@ -144,8 +210,14 @@ class octave : public wrapper_base
 	struct param_reader<std::tuple<Types...>, typename std::enable_if<(sizeof...(Types) > 1)>::type>
 	: public param_reader_base
 	{
+		/// Type of the returned parameter
 		typedef std::tuple<Types...> return_type;
 
+		/**
+		 * @brief Initializes a new instance of the param_reader class.
+		 *
+		 * @param w Wrapper to read parameters from.
+		 */
 		param_reader(octave &w) : param_reader_base(w) {}
 
 		private:
@@ -160,6 +232,14 @@ class octave : public wrapper_base
 		}
 
 		public:
+		/**
+		 * @brief Attempts reading a parameter from the associated wrapper.
+		 *
+		 * @param firstParamIdx Ordinal index of the parameter in the function call
+		 * @param paramName     User-friendly name of the parameter
+		 * @return Value of the parameter
+		 * @throws std::runtime_error When the actual parameter is not of the requested type
+		 */
 		return_type operator()(size_t firstParamIdx, const std::string &paramName)
 		{
 			// Check first parameter location
@@ -188,9 +268,17 @@ class octave : public wrapper_base
 	struct param_reader<boost::variant<Types...>, typename std::enable_if<(sizeof...(Types) > 0)>::type>
 	: public param_reader_base
 	{
+		/// Type of the returned parameter
 		typedef boost::variant<Types...> return_type;
+
+		/// Type of this parameter reader
 		typedef param_reader<boost::variant<Types...>, typename std::enable_if<(sizeof...(Types) > 0)>::type> self_type;
 
+		/**
+		 * @brief Initializes a new instance of the param_reader class.
+		 *
+		 * @param w Wrapper to read parameters from.
+		 */
 		param_reader(octave &w) : param_reader_base(w) {}
 
 		private:
@@ -219,6 +307,14 @@ class octave : public wrapper_base
 		}
 
 		public:
+		/**
+		 * @brief Attempts reading a parameter from the associated wrapper.
+		 *
+		 * @param paramIdx  Ordinal index of the parameter in the function call
+		 * @param paramName User-friendly name of the parameter
+		 * @return Value of the parameter
+		 * @throws std::runtime_error When the actual parameter is not of the requested type
+		 */
 		return_type operator()(size_t paramIdx, const std::string &paramName)
 		{
 			return variant_reader<Types...>(*this, paramIdx, paramName);
