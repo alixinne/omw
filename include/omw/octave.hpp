@@ -265,6 +265,10 @@ template <>
 int octave::param_reader<int>::try_read(size_t paramIdx, const std::string &paramName, bool &success, bool getData);
 
 template <>
+unsigned int octave::param_reader<unsigned int>::try_read(size_t paramIdx, const std::string &paramName,
+														  bool &success, bool getData);
+
+template <>
 float octave::param_reader<float>::try_read(size_t paramIdx, const std::string &paramName,
 											bool &success, bool getData);
 

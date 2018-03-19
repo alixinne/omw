@@ -100,6 +100,21 @@ int octave::param_reader<int>::try_read(size_t paramIdx, const std::string &para
 }
 
 template <>
+unsigned int octave::param_reader<unsigned int>::try_read(size_t paramIdx, const std::string &paramName,
+														  bool &success, bool getData)
+{
+	check_parameter_idx(paramIdx, paramName);
+
+	if (!(*w_.current_args_)(paramIdx).is_scalar_type())
+	{
+		success = false;
+		return 0;
+	}
+
+	return (*w_.current_args_)(paramIdx).uint32_scalar_value();
+}
+
+template <>
 float octave::param_reader<float>::try_read(size_t paramIdx, const std::string &paramName, bool &success, bool getData)
 {
 	check_parameter_idx(paramIdx, paramName);
