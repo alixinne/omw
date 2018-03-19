@@ -1,14 +1,18 @@
-#ifndef _OM_MATRIX_H_
-#define _OM_MATRIX_H_
+#ifndef _OMW_MATRIX_HPP_
+#define _OMW_MATRIX_HPP_
 
 #include <memory>
 #include <vector>
 
+#include "omw/pre.hpp"
+
+namespace omw
+{
 /**
  * @brief Represents a ND array without managing its memory, to be used with Octave
  * and Mathematica APIs.
  */
-template <typename T> class OMMatrix
+template <typename T> class matrix
 {
 	const T *m_data;
 	int *m_dims;
@@ -27,15 +31,16 @@ template <typename T> class OMMatrix
 
 	char **heads() const { return m_heads; }
 
-	OMMatrix(T *data, int *dims, int depth, char **heads)
+	matrix(T *data, int *dims, int depth, char **heads)
 	: m_data(data), m_dims(dims), m_depth(depth), m_heads(heads)
 	{
 	}
 
-	OMMatrix(std::vector<T> *vec, int *dims, int depth)
-		: m_data(vec->data()), m_dims(dims), m_depth(depth), m_heads(nullptr)
+	matrix(std::vector<T> *vec, int *dims, int depth)
+	: m_data(vec->data()), m_dims(dims), m_depth(depth), m_heads(nullptr)
 	{
 	}
 };
+}
 
-#endif /* _OM_MATRIX_H_ */
+#endif /* _OMW_MATRIX_HPP_ */

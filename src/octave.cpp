@@ -1,0 +1,211 @@
+#include <dlfcn.h>
+#include <sstream>
+
+#include "omw/array.hpp"
+#include "omw/matrix.hpp"
+#include "omw/wrapper_base.hpp"
+
+#include "omw/octave.hpp"
+
+#if OMW_OCTAVE
+
+using namespace omw;
+
+octave::octave(void *sym, std::function<void(void)> userInitializer)
+: wrapper_base(std::forward<std::function<void(void)>>(userInitializer)), current_args_(),
+  result_(), autoload_path_()
+{
+	if (sym)
+	{
+		Dl_info dl_info;
+		dladdr(sym, &dl_info);
+		autoload_path_ = std::string(dl_info.dli_fname);
+	}
+}
+
+void octave::set_autoload(const std::string &name)
+{
+	if (autoload_path_.empty())
+		throw std::runtime_error("No autoload library has been specified in this wrapper instance");
+
+	octave_value_list args;
+	args(0) = name;
+	args(1) = autoload_path_;
+
+	feval("autoload", args);
+}
+
+octave::param_reader_base::param_reader_base(octave &w) : w_(w) {}
+
+void octave::param_reader_base::check_parameter_idx(size_t paramIdx, const std::string &paramName)
+{
+	if (size_t((*w_.current_args_).length()) <= paramIdx)
+	{
+		std::stringstream ss;
+		ss << "Requested parameter " << paramName << " at index " << paramIdx
+		   << "but there is not enough parameters";
+		throw std::runtime_error(ss.str());
+	}
+}
+
+octave_value_list octave::run_function(const octave_value_list &args, std::function<void(octave &)> fun)
+{
+	try
+	{
+		current_args_ = &args;
+		result_ = octave_value_list();
+
+		fun(*this);
+		return result_;
+	}
+	catch (std::runtime_error &ex)
+	{
+		send_failure(ex.what());
+	}
+
+	return octave_value_list();
+}
+
+void octave::send_failure(const std::string &exceptionMessage, const std::string &messageName)
+{
+	octave_stdout << messageName << ": " << exceptionMessage << std::endl;
+}
+
+template <>
+bool octave::param_reader<bool>::try_read(size_t paramIdx, const std::string &paramName, bool &success, bool getData)
+{
+	check_parameter_idx(paramIdx, paramName);
+
+	if (!(*w_.current_args_)(paramIdx).is_bool_type())
+	{
+		success = false;
+		return false;
+	}
+
+	return (*w_.current_args_)(paramIdx).is_true();
+}
+
+template <>
+int octave::param_reader<int>::try_read(size_t paramIdx, const std::string &paramName, bool &success, bool getData)
+{
+	check_parameter_idx(paramIdx, paramName);
+
+	if (!(*w_.current_args_)(paramIdx).is_scalar_type())
+	{
+		success = false;
+		return 0;
+	}
+
+	return (*w_.current_args_)(paramIdx).int32_scalar_value();
+}
+
+template <>
+float octave::param_reader<float>::try_read(size_t paramIdx, const std::string &paramName, bool &success, bool getData)
+{
+	check_parameter_idx(paramIdx, paramName);
+
+	if (!(*w_.current_args_)(paramIdx).is_numeric_type())
+	{
+		success = false;
+		return 0.0f;
+	}
+
+	return (*w_.current_args_)(paramIdx).float_value();
+}
+
+template <>
+std::string octave::param_reader<std::string>::try_read(size_t paramIdx, const std::string &paramName,
+														bool &success, bool getData)
+{
+	check_parameter_idx(paramIdx, paramName);
+
+	if (!(*w_.current_args_)(paramIdx).is_string())
+	{
+		success = false;
+		return std::string();
+	}
+
+	return (*w_.current_args_)(paramIdx).string_value();
+}
+
+template <>
+std::shared_ptr<array<float>>
+octave::param_reader<std::shared_ptr<array<float>>>::try_read(size_t paramIdx, const std::string &paramName,
+															  bool &success, bool getData)
+{
+	check_parameter_idx(paramIdx, paramName);
+
+	auto av((*w_.current_args_)(paramIdx).array_value());
+	auto av_dims(av.dims());
+
+	if (av_dims.length() != 2)
+	{
+		success = false;
+		return std::shared_ptr<array<float>>();
+	}
+
+	if (!getData)
+		return std::shared_ptr<array<float>>();
+
+	std::vector<float> vecd(av_dims(0) * av_dims(1));
+	for (int i = 0; i < av_dims(0); ++i)
+	{
+		for (int j = 0; j < av_dims(1); ++j)
+		{
+			vecd[i * av_dims(1) + j] = static_cast<float>(av(i, j));
+		}
+	}
+
+	return array<float>::from_vector(vecd);
+}
+
+template <>
+std::shared_ptr<matrix<float>>
+octave::param_reader<std::shared_ptr<matrix<float>>>::try_read(size_t paramIdx, const std::string &paramName,
+															   bool &success, bool getData)
+{
+	check_parameter_idx(paramIdx, paramName);
+
+	auto av((*w_.current_args_)(paramIdx).array_value());
+	auto av_dims(av.dims());
+
+	int d = av_dims.length();
+	if (d <= 1 || d > 3)
+	{
+		success = false;
+		return std::shared_ptr<matrix<float>>();
+	}
+
+	if (!getData)
+		return std::shared_ptr<matrix<float>>();
+
+	int *dims = new int[3];
+	dims[0] = av.dim1();
+	dims[1] = av.dim2();
+	dims[2] = d == 3 ? av.dim3() : 1;
+
+	std::vector<float> *f = new std::vector<float>(dims[0] * dims[1] * dims[2]);
+
+	// Copy data
+	for (int i = 0; i < dims[0]; ++i)
+		for (int j = 0; j < dims[1]; ++j)
+			for (int k = 0; k < dims[2]; ++k)
+			{
+				size_t idx = (i * dims[1] + j) * dims[2] + k;
+				if (d == 3)
+					(*f)[idx] = static_cast<float>(av(i, j, k));
+				else
+					(*f)[idx] = static_cast<float>(av(i, j));
+			}
+
+	// Delete array when out of scope
+	std::shared_ptr<matrix<float>> matrixPtr(new matrix<float>(f, dims, d), [this, dims, f](matrix<float> *p) {
+		delete[] dims;
+		delete f;
+		delete p;
+	});
+
+	return matrixPtr;
+}
+
+#endif /* OMW_OCTAVE */

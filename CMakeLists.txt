@@ -1,9 +1,9 @@
 cmake_minimum_required(VERSION 3.1)
 
+project(omw)
+
 include(CMakeDependentOption)
 include(GNUInstallDirs)
-
-project(omw)
 
 # Load Octave and Mathematica packages from cmake/
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
@@ -11,32 +11,58 @@ find_package(Mathematica COMPONENTS MathLink)
 find_package(Octave)
 
 # Set directories
-set(OMW_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
-set(OMW_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src
+set(OMW_BASE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+set(OMW_TARGET_DIR ${CMAKE_CURRENT_BINARY_DIR})
+set(OMW_INCLUDE_DIR ${OMW_BASE_DIR}/include)
+set(OMW_SRC_DIR ${OMW_BASE_DIR}/src
   CACHE PATH "Path to the omw sources")
+
+set(OMW_SHARED_HEADERS
+  ${OMW_INCLUDE_DIR}/omw.hpp
+  ${OMW_INCLUDE_DIR}/omw/pre.hpp
+  ${OMW_INCLUDE_DIR}/omw/array.hpp
+  ${OMW_INCLUDE_DIR}/omw/matrix.hpp
+  ${OMW_INCLUDE_DIR}/omw/wrapper_base.hpp
+  ${OMW_INCLUDE_DIR}/omw/type_traits.hpp)
 
 option(OMW_DEVELOP_BUILD "Enable building the development library" OFF)
 option(OMW_BUILD_DOCUMENTATION "Build the documentation of OMW using Doxygen" OFF)
 
+# Sets standard options on libomw_* targets
+macro(set_shared_options target_name)
+  target_include_directories(${target_name} PUBLIC ${OMW_INCLUDE_DIR})
+
+  set_target_properties(${target_name} PROPERTIES
+    POSITION_INDEPENDENT_CODE ON # -fPIC for .so
+    CXX_STANDARD 14              # C++14 required
+  )
+
+  # -Wall
+  target_compile_options(${target_name} PRIVATE "-Wall")
+endmacro()
+
+# Shared code
+add_library(omw_base OBJECT EXCLUDE_FROM_ALL
+  ${OMW_SRC_DIR}/wrapper_base.cpp)
+
+set_shared_options(omw_base)
+
 # Mathematica library
 if(Mathematica_FOUND)
   add_library(omw_mathematica STATIC EXCLUDE_FROM_ALL
-    ${OMW_SRC_DIR}/om_mathematica.cpp
-    ${OMW_SRC_DIR}/om_wrapper_base.cpp)
+    ${OMW_SHARED_HEADERS}
+    ${OMW_INCLUDE_DIR}/omw/mathematica.hpp
+    ${OMW_SRC_DIR}/mathematica.cpp
+    $<TARGET_OBJECTS:omw_base>)
+
+  set_shared_options(omw_mathematica)
 
   target_compile_definitions(omw_mathematica PUBLIC
     OMW_MATHEMATICA=1 OMW_INCLUDE_MAIN=1)
   target_include_directories(omw_mathematica PUBLIC
-    ${OMW_INCLUDE_DIR}
     ${Mathematica_MathLink_INCLUDE_DIR})
   target_link_libraries(omw_mathematica INTERFACE
     ${Mathematica_MathLink_LIBRARIES})
-
-  # C++ 14 required
-  set_property(TARGET omw_mathematica PROPERTY CXX_STANDARD 14)
-
-  # -Wall
-  target_compile_options(omw_mathematica PRIVATE "-Wall")
 
   # We need to put some variables in the CMakeCache because
   # omw_add_mathematica will be invoked from an outer scope
@@ -148,23 +174,17 @@ endif()
 # Octave library
 if(Octave_FOUND OR OCTAVE_EXECUTABLE)
   add_library(omw_octave STATIC EXCLUDE_FROM_ALL
-    ${OMW_SRC_DIR}/om_octave.cpp
-    ${OMW_SRC_DIR}/om_wrapper_base.cpp)
+    ${OMW_SHARED_HEADERS}
+    ${OMW_INCLUDE_DIR}/omw/octave.hpp
+    ${OMW_SRC_DIR}/octave.cpp
+    $<TARGET_OBJECTS:omw_base>)
 
   target_compile_definitions(omw_octave PUBLIC
     OMW_OCTAVE=1)
   target_include_directories(omw_octave PUBLIC
-    ${OMW_INCLUDE_DIR}
     ${OCTAVE_INCLUDE_DIRS})
 
-  # -fPIC for .so
-  set_property(TARGET omw_octave PROPERTY POSITION_INDEPENDENT_CODE ON)
-
-  # C++ 14 required
-  set_property(TARGET omw_octave PROPERTY CXX_STANDARD 14)
-
-  # -Wall
-  target_compile_options(omw_octave PRIVATE "-Wall")
+  set_shared_options(omw_octave)
 
   # We need to put OCTAVE_OCT_FILE_DIR in the CMakeCache because
   # omw_add_octave will be invoked from an outer scope
@@ -223,31 +243,13 @@ else()
 endif()
 
 if(OMW_DEVELOP_BUILD)
-  if(NOT Mathematica_FOUND)
-    message(FATAL_ERROR "Trying to create the development build, but Wolfram Mathematica is not available")
-  endif()
+  set(OMW_TEST_SRC_DIR ${OMW_BASE_DIR}/test)
+  set(OMW_T_DIR ${OMW_BASE_DIR}/t)
 
-  if (NOT (Octave_FOUND OR OCTAVE_EXECUTABLE))
-    message(FATAL_ERROR "Trying to create the development build, but Octave is not available")
-  endif()
-
-  omw_add_mathematica(omw_test_mathematica
-    PACKAGE_NAME OMW
-    MPREP_SOURCES ${OMW_SRC_DIR}/omw_test.tm
-    SOURCES ${OMW_SRC_DIR}/omw_test.cpp)
-
-  omw_add_octave(omw_test_octave
-    OCT_NAME omw_tests
-    SOURCES ${OMW_SRC_DIR}/omw_test.cpp)
-
-  # Test procedures
+  # Note: we need to enable_testing here because
+  # this relies on CMAKE_CURRENT_BINARY_DIR
   enable_testing()
-  file(GLOB TEST_FILES ${CMAKE_SOURCE_DIR}/t/*.t)
-  foreach(TEST_FILE ${TEST_FILES})
-    get_filename_component(TEST_FILE_NAME ${TEST_FILE} NAME_WE)
-    add_test(NAME ${TEST_FILE_NAME} COMMAND prove -v --color ${TEST_FILE} :: --path ${CMAKE_CURRENT_BINARY_DIR} --octave-pkg omw_tests --mathematica-pkg OMW
-      WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
-  endforeach()
+  add_subdirectory(${OMW_TEST_SRC_DIR})
 endif()
 
 # Documentation
