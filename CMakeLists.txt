@@ -173,7 +173,7 @@ if(Octave_FOUND OR OCTAVE_EXECUTABLE)
 
   # Helper function to create an Octave target
   function(omw_add_octave target_name)
-    cmake_parse_arguments(OMW_ADD "USER_INSTALL" "INSTALL;OCT_NAME" "SOURCES;LINK_LIBRARIES;COMPILE_OPTIONS" ${ARGN})
+    cmake_parse_arguments(OMW_ADD "USER_INSTALL" "INSTALL;OCT_NAME;TARGET_PACKAGE_DIR" "SOURCES;LINK_LIBRARIES;COMPILE_OPTIONS" ${ARGN})
 
     message(STATUS "Creating Octave target ${target_name}")
 
@@ -184,6 +184,15 @@ if(Octave_FOUND OR OCTAVE_EXECUTABLE)
     # Change name of oct file
     if(OMW_ADD_OCT_NAME)
       set_property(TARGET ${target_name} PROPERTY OUTPUT_NAME ${OMW_ADD_OCT_NAME})
+    endif()
+
+    # Set location of target file
+    if(OMW_ADD_TARGET_PACKAGE_DIR)
+      set(PACKAGE_TARGET_DIR ${OMW_ADD_TARGET_PACKAGE_DIR})
+      add_custom_command(TARGET ${target_name} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${PACKAGE_TARGET_DIR}
+        COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${target_name}>
+          ${PACKAGE_TARGET_DIR})
     endif()
 
     # C++ 14 required
