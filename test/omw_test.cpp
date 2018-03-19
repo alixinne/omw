@@ -1,15 +1,53 @@
 #include <omw.hpp>
 
-template <typename TWrapper> void impl_omw_test_times(TWrapper &w)
+template <typename TWrapper> void impl_omw_test_bool(TWrapper &w)
 {
-	int x = w.template get_param<int>(0, "X");
-	int y = w.template get_param<int>(1, "Y");
+	bool b = w.template get_param<bool>(0, "v");
 
-	int result = x * y;
+	std::string result = b ? "true" : "false";
+
+	OM_RESULT_OCTAVE(w, [&]() { w.result().append(result); });
+
+	OM_RESULT_MATHEMATICA(w, [&]() { MLPutString(w.link, result.c_str()); });
+}
+
+template <typename TWrapper, typename T> void impl_omw_test_times_t(TWrapper &w)
+{
+	T x = w.template get_param<T>(0, "X");
+	T y = w.template get_param<T>(1, "Y");
+
+	T result = x * y;
 
 	OM_RESULT_OCTAVE(w, [&]() { w.result().append(result); });
 
 	OM_RESULT_MATHEMATICA(w, [&]() { MLPutInteger32(w.link, result); });
+}
+
+template <typename TWrapper> void impl_omw_test_times(TWrapper &w)
+{
+	impl_omw_test_times_t<TWrapper, int>(w);
+}
+
+template <typename TWrapper> void impl_omw_test_utimes(TWrapper &w)
+{
+	impl_omw_test_times_t<TWrapper, unsigned int>(w);
+}
+
+template <typename TWrapper> void impl_omw_test_ftimes(TWrapper &w)
+{
+	impl_omw_test_times_t<TWrapper, float>(w);
+}
+
+template <typename TWrapper> void impl_omw_test_concat(TWrapper &w)
+{
+	std::string a = w.template get_param<std::string>(0, "A");
+	std::string b = w.template get_param<std::string>(1, "B");
+
+	std::string result = a + b;
+
+	OM_RESULT_OCTAVE(w, [&]() { w.result().append(result); });
+
+	OM_RESULT_MATHEMATICA(w, [&]() { MLPutString(w.link, result.c_str()); });
 }
 
 #if OMW_OCTAVE
@@ -18,7 +56,11 @@ static omw::octave wrapper(reinterpret_cast<void *>(&impl_omw_test_times<omw::oc
 
 DEFUN_DLD(omw_tests, args, , "omw_tests() initializes the omw_test oct file")
 {
+	wrapper.set_autoload("omw_test_bool");
 	wrapper.set_autoload("omw_test_times");
+	wrapper.set_autoload("omw_test_utimes");
+	wrapper.set_autoload("omw_test_ftimes");
+	wrapper.set_autoload("omw_test_concat");
 
 	return octave_value();
 }
@@ -48,4 +90,12 @@ static omw::mathematica wrapper("OMW", stdlink);
 
 #endif /* !defined(OM_DEFUN) */
 
+OM_DEFUN(omw_test_bool, "omw_test_bool(v) returns v ? 'true' : 'false'")
+
 OM_DEFUN(omw_test_times, "omw_test_times(x, y) returns x * y")
+
+OM_DEFUN(omw_test_utimes, "omw_test_utimes(x, y) returns x * y")
+
+OM_DEFUN(omw_test_ftimes, "omw_test_ftimes(x, y) returns x * y")
+
+OM_DEFUN(omw_test_concat, "omw_test_concat(a, b) returns a . b")
