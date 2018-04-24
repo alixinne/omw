@@ -504,7 +504,7 @@ class mathematica : public wrapper_base
 		template <typename T0, typename... Tn, typename = typename std::enable_if<(sizeof...(Tn) > 0)>::type>
 		static return_type variant_reader(self_type &pr, size_t paramIdx, const std::string &paramName)
 		{
-			if (param_reader<T0>(pr.w_).IsType(paramIdx, paramName))
+			if (param_reader<T0>(pr.w_).is_type(paramIdx, paramName))
 			{
 				return return_type(param_reader<T0>(pr.w_)(paramIdx, paramName));
 			}
