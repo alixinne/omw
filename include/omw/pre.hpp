@@ -10,8 +10,8 @@
 
 namespace omw
 {
-template <typename T> class array;
-template <typename T> class matrix;
+template <typename T> class basic_array;
+template <typename T> class basic_matrix;
 class wrapper_base;
 
 #if OMW_MATHEMATICA

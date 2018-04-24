@@ -373,14 +373,14 @@ std::string octave::param_reader<std::string>::try_read(size_t paramIdx, const s
 														bool &success, bool getData);
 
 template <>
-std::shared_ptr<array<float>>
-octave::param_reader<std::shared_ptr<array<float>>>::try_read(size_t paramIdx, const std::string &paramName,
-															  bool &success, bool getData);
+std::shared_ptr<basic_array<float>>
+octave::param_reader<std::shared_ptr<basic_array<float>>>::try_read(size_t paramIdx, const std::string &paramName,
+																	bool &success, bool getData);
 
 template <>
-std::shared_ptr<matrix<float>>
-octave::param_reader<std::shared_ptr<matrix<float>>>::try_read(size_t paramIdx, const std::string &paramName,
-															   bool &success, bool getData);
+std::shared_ptr<basic_matrix<float>>
+octave::param_reader<std::shared_ptr<basic_matrix<float>>>::try_read(size_t paramIdx, const std::string &paramName,
+																	 bool &success, bool getData);
 }
 
 #define OM_RESULT_OCTAVE(w, code) (code)()

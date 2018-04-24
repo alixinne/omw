@@ -19,19 +19,21 @@ namespace omw
  * @brief Represents a 1D array without managing its memory, to be used with Octave
  * and Mathematica APIs.
  */
-template <typename T> class array
+template <typename T> class basic_array
 {
-	const T *m_data;
-	std::size_t m_length;
-	std::vector<T> m_container;
-
 	public:
+	/**
+	 * @brief Base class destructor
+	 */
+	virtual ~basic_array()
+	{}
+
 	/**
 	 * @brief Pointer to the array data.
 	 *
 	 * @return Pointer to the underlying memory block
 	 */
-	const T *data() const { return m_data; }
+	virtual const T *data() const = 0;
 
 	/**
 	 * @brief Accesses an element by index.
@@ -39,40 +41,63 @@ template <typename T> class array
 	 * @param idx 0-based index of the element in the array
 	 * @return Reference to the element at the given index
 	 */
-	const T &operator[](std::size_t idx) const { return m_data[idx]; }
+	virtual const T &operator[](std::size_t idx) const = 0;
 
 	/**
 	 * @brief Obtains the size of the array.
 	 *
 	 * @return Number of elements in the array
 	 */
-	std::size_t size() const { return m_length; }
+	virtual std::size_t size() const = 0;
+};
 
+/**
+ * @brief Represents a 1D array backed by a vector.
+ */
+template <typename T> class vector_array : public basic_array<T>
+{
+	std::vector<T> m_container;
+
+public:
 	/**
-	 * @brief Initializes a new instance of the omw::array class.
+	 * @brief Pointer to the array data.
 	 *
-	 * @param data   Caller-allocated memory that holds the contents of the array
-	 * @param length Size (in elements) of the array memory
+	 * @return Pointer to the underlying memory block
 	 */
-	array(T *data, std::size_t length) : m_data(data), m_length(length) {}
+	const T *data() const override { return m_container.data(); }
 
 	/**
-	 * @brief Initializes a new instance of the omw::array class.
+	 * @brief Accesses an element by index.
+	 *
+	 * @param idx 0-based index of the element in the array
+	 * @return Reference to the element at the given index
+	 */
+	const T &operator[](std::size_t idx) const override { return m_container[idx]; }
+
+	/**
+	 * @brief Obtains the size of the array.
+	 *
+	 * @return Number of elements in the array
+	 */
+	std::size_t size() const override { return m_container.size(); }
+
+	/**
+	 * @brief Initializes a new instance of the omw::vector_array class.
 	 *
 	 * @param v Vector that holds the contents of the array
 	 */
-	array(const std::vector<T> &v) : m_data(v.data()), m_length(v.size()), m_container(v) {}
+	vector_array(const std::vector<T> &v) : m_container(v) {}
 
 	/**
-	 * @brief Builds an omw::array &lt;T&gt; from a std::vector &lt;T&gt;.
+	 * @brief Builds an omw::vector_array &lt;T&gt; from a std::vector &lt;T&gt;.
 	 *
 	 * @tparam Args Type of the arguments to forward to the std::vector&lt;T&gt; constructor
 	 * @param args  Arguments to forward to the std::vector&lt;T&gt; constructor
 	 * @return      Shared pointer to the newly allocated omw::array
 	 */
-	template <typename... Args> static std::shared_ptr<array<T>> from_vector(Args... args)
+	template <typename... Args> static std::shared_ptr<basic_array<T>> make(Args&&... args)
 	{
-		return std::make_shared<array<T>>(std::vector<T>(args...));
+		return std::make_shared<vector_array<T>>(std::vector<T>(std::forward<Args>(args)...));
 	}
 };
 }

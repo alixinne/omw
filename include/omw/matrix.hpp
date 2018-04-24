@@ -16,24 +16,22 @@
 namespace omw
 {
 /**
- * @brief Represents a ND array without managing its memory, to be used with Octave
- * and Mathematica APIs.
+ * @brief Represents a ND array to be used with Octave and Mathematica APIs.
  */
-template <typename T> class matrix
+template <typename T> class basic_matrix
 {
-	const T *m_data;
-	int *m_dims;
-	int m_depth;
-	char **m_heads;
-	std::vector<T> *m_vec;
+public:
+	/**
+	 * @brief Base class deleter
+	 */
+	virtual ~basic_matrix() {}
 
-	public:
 	/**
 	 * @brief Pointer to the matrix data.
 	 *
 	 * @return Pointer to the underlying memory block
 	 */
-	const T *data() const { return m_data; }
+	virtual const T *data() const = 0;
 
 	/**
 	 * @brief Accesses an element by index. The matrix is in
@@ -42,7 +40,7 @@ template <typename T> class matrix
 	 * @param idx 0-based index of the element in the array
 	 * @return Reference to the element at the given index
 	 */
-	const T &operator[](std::size_t idx) const { return m_data[idx]; }
+	virtual const T &operator[](std::size_t idx) const = 0;
 
 	/**
 	 * @brief Pointer to the dimensions array. Each element
@@ -50,14 +48,14 @@ template <typename T> class matrix
 	 *
 	 * @return Pointer to the dimensions array
 	 */
-	int *dims() const { return m_dims; }
+	virtual const int *dims() const = 0;
 
 	/**
 	 * @brief Depth of the matrix. This is the size of the #dims array.
 	 *
 	 * @return Depth of the matrix
 	 */
-	int depth() const { return m_depth; }
+	virtual int depth() const = 0;
 
 	/**
 	 * @brief Pointer to the head data. This is only defined when
@@ -65,20 +63,56 @@ template <typename T> class matrix
 	 *
 	 * @return Pointer to the head data
 	 */
-	char **heads() const { return m_heads; }
+	virtual char **heads() const = 0;
+};
+
+/**
+ * @brief Represents a ND array based on a vector.
+ */
+template <typename T> class vector_matrix : public basic_matrix<T>
+{
+	std::vector<T> m_vec;
+	std::vector<int> m_dims;
+
+	public:
+	/**
+	 * @brief Pointer to the matrix data.
+	 *
+	 * @return Pointer to the underlying memory block
+	 */
+	const T *data() const override { return m_vec.data(); }
 
 	/**
-	 * @brief Initializes a new instance of the omw::matrix class.
+	 * @brief Accesses an element by index. The matrix is in
+	 * row-major order.
 	 *
-	 * @param data See #data
-	 * @param dims See #dims
-	 * @param depth See #depth
-	 * @param heads See #heads
+	 * @param idx 0-based index of the element in the array
+	 * @return Reference to the element at the given index
 	 */
-	matrix(T *data, int *dims, int depth, char **heads)
-	: m_data(data), m_dims(dims), m_depth(depth), m_heads(heads)
-	{
-	}
+	const T &operator[](std::size_t idx) const override { return m_vec[idx]; }
+
+	/**
+	 * @brief Pointer to the dimensions array. Each element
+	 * is the size of the corresponding dimension in the matrix.
+	 *
+	 * @return Pointer to the dimensions array
+	 */
+	const int *dims() const override { return m_dims.data(); }
+
+	/**
+	 * @brief Depth of the matrix. This is the size of the #dims array.
+	 *
+	 * @return Depth of the matrix
+	 */
+	int depth() const override { return m_dims.size(); }
+
+	/**
+	 * @brief Pointer to the head data. This is only defined when
+	 * using the omw::mathematica wrapper.
+	 *
+	 * @return Pointer to the head data
+	 */
+	char **heads() const override { return nullptr; }
 
 	/**
 	 * @brief Initializes a new instance of the omw::matrix class based
@@ -88,9 +122,21 @@ template <typename T> class matrix
 	 * @param dims See #dims
 	 * @param depth See #depth
 	 */
-	matrix(std::vector<T> *vec, int *dims, int depth)
-	: m_data(vec->data()), m_dims(dims), m_depth(depth), m_heads(nullptr)
+	vector_matrix(std::vector<T> &&vec, std::vector<int> &&dims)
+	: m_vec(std::move(vec)), m_dims(std::move(dims))
 	{
+	}
+
+	/**
+	 * @brief Create a new vector_matrix&lt;T&gt; from arguments to
+	 * its constructor.
+	 *
+	 * @see #vector_matrix
+	 */
+	template<typename... Args>
+	static std::shared_ptr<basic_matrix<T>> make(Args&&... args)
+	{
+		return std::make_shared<vector_matrix<T>>(std::forward<Args>(args)...);
 	}
 };
 }

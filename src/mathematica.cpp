@@ -268,9 +268,9 @@ std::string mathematica::param_reader<std::string>::try_read(size_t paramIdx, co
 }
 
 template <>
-std::shared_ptr<array<float>>
-mathematica::param_reader<std::shared_ptr<array<float>>>::try_read(size_t paramIdx, const std::string &paramName,
-																   bool &success, bool getData)
+std::shared_ptr<basic_array<float>>
+mathematica::param_reader<std::shared_ptr<basic_array<float>>>::try_read(size_t paramIdx, const std::string &paramName,
+																		 bool &success, bool getData)
 {
 	check_parameter_idx(paramIdx, paramName);
 
@@ -286,20 +286,14 @@ mathematica::param_reader<std::shared_ptr<array<float>>>::try_read(size_t paramI
 		MLClearError(w_.link);
 
 		success = false;
-		return std::shared_ptr<array<float>>();
+		return {};
 	}
 
 	if (getData)
 	{
 		w_.current_param_idx_++;
 
-		// Delete array when out of scope
-		std::shared_ptr<array<float>> arrayPtr(new array<float>(arrayData, arrayLen), [this](array<float> *p) {
-			MLReleaseReal32List(w_.link, const_cast<float *>(p->data()), p->size());
-			delete p;
-		});
-
-		return arrayPtr;
+		return mathematica_array<float>::make(arrayData, arrayLen, w_.link, MLReleaseReal32List);
 	}
 	else
 	{
@@ -307,14 +301,14 @@ mathematica::param_reader<std::shared_ptr<array<float>>>::try_read(size_t paramI
 		MLReleaseReal32List(w_.link, arrayData, arrayLen);
 		MLSeekToMark(w_.link, mark.get(), 0);
 
-		return std::shared_ptr<array<float>>();
+		return {};
 	}
 }
 
 template <>
-std::shared_ptr<matrix<float>>
-mathematica::param_reader<std::shared_ptr<matrix<float>>>::try_read(size_t paramIdx, const std::string &paramName,
-																	bool &success, bool getData)
+std::shared_ptr<basic_matrix<float>>
+mathematica::param_reader<std::shared_ptr<basic_matrix<float>>>::try_read(size_t paramIdx, const std::string &paramName,
+																		  bool &success, bool getData)
 {
 	check_parameter_idx(paramIdx, paramName);
 
@@ -332,21 +326,14 @@ mathematica::param_reader<std::shared_ptr<matrix<float>>>::try_read(size_t param
 		MLClearError(w_.link);
 
 		success = false;
-		return std::shared_ptr<matrix<float>>();
+		return {};
 	}
 
 	if (getData)
 	{
 		w_.current_param_idx_++;
 
-		// Delete array when out of scope
-		std::shared_ptr<matrix<float>> matrixPtr(
-		new matrix<float>(arrayData, arrayDims, arrayDepth, arrayHeads), [this](matrix<float> *p) {
-			MLReleaseReal32Array(w_.link, const_cast<float *>(p->data()), p->dims(), p->heads(), p->depth());
-			delete p;
-		});
-
-		return matrixPtr;
+		return mathematica_matrix<float>::make(arrayData, arrayDims, arrayDepth, arrayHeads, w_.link, MLReleaseReal32Array);
 	}
 	else
 	{
@@ -354,7 +341,7 @@ mathematica::param_reader<std::shared_ptr<matrix<float>>>::try_read(size_t param
 		MLReleaseReal32Array(w_.link, arrayData, arrayDims, arrayHeads, arrayDepth);
 		MLSeekToMark(w_.link, mark.get(), 0);
 
-		return std::shared_ptr<matrix<float>>();
+		return {};
 	}
 }
 
