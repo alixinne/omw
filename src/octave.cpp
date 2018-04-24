@@ -144,9 +144,9 @@ std::string octave::param_reader<std::string>::try_read(size_t paramIdx, const s
 }
 
 template <>
-std::shared_ptr<array<float>>
-octave::param_reader<std::shared_ptr<array<float>>>::try_read(size_t paramIdx, const std::string &paramName,
-															  bool &success, bool getData)
+std::shared_ptr<basic_array<float>>
+octave::param_reader<std::shared_ptr<basic_array<float>>>::try_read(size_t paramIdx, const std::string &paramName,
+																	bool &success, bool getData)
 {
 	check_parameter_idx(paramIdx, paramName);
 
@@ -156,11 +156,11 @@ octave::param_reader<std::shared_ptr<array<float>>>::try_read(size_t paramIdx, c
 	if (av_dims.length() != 2)
 	{
 		success = false;
-		return std::shared_ptr<array<float>>();
+		return {};
 	}
 
 	if (!getData)
-		return std::shared_ptr<array<float>>();
+		return {};
 
 	std::vector<float> vecd(av_dims(0) * av_dims(1));
 	for (int i = 0; i < av_dims(0); ++i)
@@ -171,13 +171,13 @@ octave::param_reader<std::shared_ptr<array<float>>>::try_read(size_t paramIdx, c
 		}
 	}
 
-	return array<float>::from_vector(vecd);
+	return vector_array<float>::make(vecd);
 }
 
 template <>
-std::shared_ptr<matrix<float>>
-octave::param_reader<std::shared_ptr<matrix<float>>>::try_read(size_t paramIdx, const std::string &paramName,
-															   bool &success, bool getData)
+std::shared_ptr<basic_matrix<float>>
+octave::param_reader<std::shared_ptr<basic_matrix<float>>>::try_read(size_t paramIdx, const std::string &paramName,
+																	 bool &success, bool getData)
 {
 	check_parameter_idx(paramIdx, paramName);
 
@@ -188,18 +188,14 @@ octave::param_reader<std::shared_ptr<matrix<float>>>::try_read(size_t paramIdx, 
 	if (d <= 1 || d > 3)
 	{
 		success = false;
-		return std::shared_ptr<matrix<float>>();
+		return {};
 	}
 
 	if (!getData)
-		return std::shared_ptr<matrix<float>>();
+		return {};
 
-	int *dims = new int[3];
-	dims[0] = av.dim1();
-	dims[1] = av.dim2();
-	dims[2] = d == 3 ? av.dim3() : 1;
-
-	std::vector<float> *f = new std::vector<float>(dims[0] * dims[1] * dims[2]);
+	std::vector<int> dims{av.dim1(), av.dim2(), d == 3 ? av.dim3() : 1};
+	std::vector<float> f(dims[0] * dims[1] * dims[2]);
 
 	// Copy data
 	for (int i = 0; i < dims[0]; ++i)
@@ -208,19 +204,12 @@ octave::param_reader<std::shared_ptr<matrix<float>>>::try_read(size_t paramIdx, 
 			{
 				size_t idx = (i * dims[1] + j) * dims[2] + k;
 				if (d == 3)
-					(*f)[idx] = static_cast<float>(av(i, j, k));
+					f[idx] = static_cast<float>(av(i, j, k));
 				else
-					(*f)[idx] = static_cast<float>(av(i, j));
+					f[idx] = static_cast<float>(av(i, j));
 			}
 
-	// Delete array when out of scope
-	std::shared_ptr<matrix<float>> matrixPtr(new matrix<float>(f, dims, d), [this, dims, f](matrix<float> *p) {
-		delete[] dims;
-		delete f;
-		delete p;
-	});
-
-	return matrixPtr;
+	return vector_matrix<float>::make(std::move(f), std::move(dims));
 }
 
 #endif /* OMW_OCTAVE */
