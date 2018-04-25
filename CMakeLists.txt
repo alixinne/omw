@@ -224,10 +224,10 @@ if(Octave_FOUND OR OCTAVE_EXECUTABLE)
     # Create install target if requested
     if(OMW_ADD_INSTALL)
       if(OMW_ADD_USER_INSTALL)
-        set(INSTALL_DESTINATION ${OCTAVE_OCT_FILE_DIR})
-      else()
         get_filename_component(INSTALL_DESTINATION_ARCH ${OCTAVE_OCT_FILE_DIR} NAME)
         set(INSTALL_DESTINATION $ENV{HOME}/.octave/oct/${INSTALL_DESTINATION_ARCH})
+      else()
+        set(INSTALL_DESTINATION ${OCTAVE_OCT_FILE_DIR})
       endif()
 
       install(TARGETS ${target_name}
