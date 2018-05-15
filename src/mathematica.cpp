@@ -14,6 +14,89 @@
 
 using namespace omw;
 
+/**
+ * @brief Remove escape sequences from a string returned by Mathematica
+ *
+ * Mathematica prefers sending strings with special characters escaped, even on
+ * MathLink.  This method evaluates the escape sequences to the actual
+ * characters and returns the result.
+ *
+ * @param source Escaped string
+ * @return Unescaped string
+ */
+std::string mathematica_unescape(const std::string &source)
+{
+	// Process escapes
+	std::stringstream unescaped;
+	size_t len = source.size();
+	enum
+	{
+		Standard,
+		ReadingEscape,
+		ReadingOctalEscape
+	} state = Standard;
+	int cnum;
+
+	for (size_t i = 0; i <= len; ++i)
+	{
+		if (state == Standard)
+		{
+			if (source[i] == '\\')
+			{
+				state = ReadingEscape;
+				cnum = 0;
+			}
+			else if (source[i])
+			{
+				unescaped << source[i];
+			}
+		}
+		else if (state == ReadingEscape)
+		{
+			if (source[i] == '0')
+			{
+				state = ReadingOctalEscape;
+			}
+			else if (source[i] == 'n')
+			{
+				unescaped << '\n';
+				state = Standard;
+			}
+			else if (source[i] == 'r')
+			{
+				unescaped << '\r';
+				state = Standard;
+			}
+			else if (source[i] == 't')
+			{
+				unescaped << '\t';
+				state = Standard;
+			}
+			else
+			{
+				unescaped << '\\';
+				unescaped << source[i];
+				state = Standard;
+			}
+		}
+		else if (state == ReadingOctalEscape)
+		{
+			if (source[i] >= '0' && source[i] <= '7')
+			{
+				cnum = cnum * 8 + (source[i] - '0');
+			}
+			else
+			{
+				unescaped << static_cast<char>(cnum);
+				state = Standard;
+				i--;
+			}
+		}
+	}
+
+	return unescaped.str();
+}
+
 mathematica::mathematica(const std::string &mathNamespace, MLINK &link, std::function<void(void)> userInitializer)
 : wrapper_base(std::forward<std::function<void(void)>>(userInitializer)),
   current_param_idx_(std::numeric_limits<size_t>::max()), math_namespace_(mathNamespace), link(link)
@@ -256,7 +339,7 @@ std::string mathematica::param_reader<std::string>::try_read(size_t paramIdx, co
 		std::string paramResult(paramValue);
 		MLReleaseString(w_.link, paramValue);
 
-		return paramResult;
+		return mathematica_unescape(paramResult);
 	}
 	else
 	{
