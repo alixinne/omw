@@ -139,6 +139,80 @@ template <typename T> class vector_matrix : public basic_matrix<T>
 		return std::make_shared<vector_matrix<T>>(std::forward<Args>(args)...);
 	}
 };
+
+/**
+ * @brief Represents a ND array based on a reference to a vector.
+ */
+template <typename T> class ref_matrix : public basic_matrix<T>
+{
+	const std::vector<T> &m_vec;
+	const std::vector<int> &m_dims;
+
+	public:
+	/**
+	 * @brief Pointer to the matrix data.
+	 *
+	 * @return Pointer to the underlying memory block
+	 */
+	const T *data() const override { return m_vec.data(); }
+
+	/**
+	 * @brief Accesses an element by index. The matrix is in
+	 * row-major order.
+	 *
+	 * @param idx 0-based index of the element in the array
+	 * @return Reference to the element at the given index
+	 */
+	const T &operator[](std::size_t idx) const override { return m_vec[idx]; }
+
+	/**
+	 * @brief Pointer to the dimensions array. Each element
+	 * is the size of the corresponding dimension in the matrix.
+	 *
+	 * @return Pointer to the dimensions array
+	 */
+	const int *dims() const override { return m_dims.data(); }
+
+	/**
+	 * @brief Depth of the matrix. This is the size of the #dims array.
+	 *
+	 * @return Depth of the matrix
+	 */
+	int depth() const override { return m_dims.size(); }
+
+	/**
+	 * @brief Pointer to the head data. This is only defined when
+	 * using the omw::mathematica wrapper.
+	 *
+	 * @return Pointer to the head data
+	 */
+	char **heads() const override { return nullptr; }
+
+	/**
+	 * @brief Initializes a new instance of the omw::ref_matrix class based
+	 * on a reference to a std::vector.
+	 *
+	 * @param vec Vector that holds the contents of the matrix
+	 * @param dims See #dims
+	 * @param depth See #depth
+	 */
+	ref_matrix(const std::vector<T> &vec, const std::vector<int> &dims)
+	: m_vec(vec), m_dims(dims)
+	{
+	}
+
+	/**
+	 * @brief Create a new vector_matrix&lt;T&gt; from arguments to
+	 * its constructor.
+	 *
+	 * @see #vector_matrix
+	 */
+	template<typename... Args>
+	static std::shared_ptr<basic_matrix<T>> make(Args&&... args)
+	{
+		return std::make_shared<ref_matrix<T>>(std::forward<Args>(args)...);
+	}
+};
 }
 
 #endif /* _OMW_MATRIX_HPP_ */

@@ -557,6 +557,95 @@ class mathematica : public wrapper_base
 	void evaluate_result(std::function<void(void)> fun);
 
 	/**
+	 * @brief Base class for wrapper result writers
+	 */
+	struct result_writer_base
+	{
+		protected:
+		/// Reference to the object that created this result writer
+		mathematica &w_;
+		
+		/**
+		 * @brief Initializes a new instance of the result_writer_base class
+		 *
+		 * @param w Wrapper this instance will write results to
+		 */
+		result_writer_base(mathematica &w);
+	};
+
+	/**
+	 * @brief Template declaration for result writers
+	 */
+	template <class T, typename Enable, class... Types> struct result_writer;
+
+	/**
+	 * @brief Atomic result writer template
+	 */
+	template <class T0>
+	struct result_writer<T0, typename std::enable_if<is_simple_param_type<T0>::value>::type> : public result_writer_base
+	{
+		/// Type of the result
+		typedef T0 result_type;
+
+		/**
+		 * @brief Initialize a new instance of the result_writer class
+		 *
+		 * @param w Wrapper to write the result to
+		 */
+		result_writer(mathematica &w) : result_writer_base(w) {}
+
+		/**
+		 * @brief Writes the result to the wrapper instance
+		 *
+		 * @param result Result value to write
+		 */
+		void operator()(const result_type &result);
+	};
+
+	/**
+	 * @brief Multiple result writer template
+	 */
+	template <class T0, class... Types>
+	struct result_writer<T0, typename std::enable_if<(sizeof...(Types) > 0)>::type, Types...>
+	: public result_writer_base
+	{
+		/**
+		 * @brief Initializes a new instance of the result_writer class.
+		 *
+		 * @param w Wrapper to read parameters from.
+		 */
+		result_writer(mathematica &w) : result_writer_base(w) {}
+
+		/**
+		 * @brief Writes the results to the wrapper instance
+		 *
+		 * @param result Result value to write
+		 */
+		void operator()(const T0& arg0, const Types&... results)
+		{
+			MLPutFunction(w_.link, "List", sizeof...(Types));
+
+			int _[] = { (w_.write_result<T0>(arg0), 0), (w_.write_result<Types>(results), 0)... };
+			(void)_;
+		}
+	};
+
+	/**
+	 * @brief Writes the result \p args to the MathLink represented by this wrapper
+	 *
+	 * @param args Results to write to the link
+	 */
+	template <class T0, class... Types>
+	void write_result(const T0& arg0, const Types&... args)
+	{
+		evaluate_result([this, &arg0, &args...]() {
+							result_writer<typename std::remove_reference<T0>::type, void,
+										  typename std::remove_reference<Types>::type...>(*this)(
+												arg0, args...);
+						});
+	}
+
+	/**
 	 * @brief Sends a failure message on the link object to notify of a failure.
 	 * @param exceptionMessage Text to send in the message
 	 * @param messageName      Name of the format string to use
@@ -596,6 +685,18 @@ template <>
 std::shared_ptr<basic_matrix<float>>
 mathematica::param_reader<std::shared_ptr<basic_matrix<float>>>::try_read(size_t paramIdx, const std::string &paramName,
 																		  bool &success, bool getData);
+
+template <>
+void mathematica::result_writer<float, void>::operator()(const float &result);
+
+template <>
+void mathematica::result_writer<double, void>::operator()(const double &result);
+
+template <>
+void mathematica::result_writer<std::string, void>::operator()(const std::string &result);
+
+template <>
+void mathematica::result_writer<std::shared_ptr<basic_matrix<float>>, void>::operator()(const std::shared_ptr<basic_matrix<float>> &result);
 }
 
 /**

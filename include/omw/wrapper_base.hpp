@@ -18,6 +18,8 @@ namespace omw
 class wrapper_base
 {
 	std::function<void(void)> user_initializer_;
+	/// A flag indicating if matrices written by write_result should be images or not
+	bool matrices_as_images_;
 
 	public:
 	/**
@@ -31,6 +33,22 @@ class wrapper_base
 	 * @brief Ensures the user initialization routine has been called.
 	 */
 	void check_initialization();
+
+	/**
+	 * @brief Get the current value of the matrices_as_images flag
+	 *
+	 * @return true if matrices are written as images, false otherwise
+	 */
+	inline bool matrices_as_images() const
+	{ return matrices_as_images_; }
+
+	/**
+	 * @brief Sets the current value of the matrices_as_images flag
+	 *
+	 * @param new_matrices_as_images Value of the flag
+	 */
+	inline void matrices_as_images(bool new_matrices_as_images)
+	{ matrices_as_images_ = new_matrices_as_images; }
 };
 }
 

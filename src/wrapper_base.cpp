@@ -3,7 +3,8 @@
 using namespace omw;
 
 wrapper_base::wrapper_base(std::function<void(void)> &&userInitializer)
-: user_initializer_(std::forward<std::function<void(void)>>(userInitializer))
+: user_initializer_(std::forward<std::function<void(void)>>(userInitializer)),
+  matrices_as_images_(false)
 {
 }
 

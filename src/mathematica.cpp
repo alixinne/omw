@@ -145,6 +145,11 @@ void mathematica::evaluate_result(std::function<void(void)> fun)
 	has_result_ = true;
 }
 
+mathematica::result_writer_base::result_writer_base(mathematica &w)
+	: w_(w)
+{
+}
+
 void mathematica::send_failure(const std::string &exceptionMessage, const std::string &messageName)
 {
 	MLNewPacket(link);
@@ -426,6 +431,34 @@ mathematica::param_reader<std::shared_ptr<basic_matrix<float>>>::try_read(size_t
 
 		return {};
 	}
+}
+
+template <>
+void mathematica::result_writer<float, void>::operator()(const float &result)
+{
+	MLPutReal32(w_.link, result);
+}
+
+
+template <>
+void mathematica::result_writer<double, void>::operator()(const double &result)
+{
+	MLPutReal64(w_.link, result);
+}
+
+template <>
+void mathematica::result_writer<std::string, void>::operator()(const std::string &result)
+{
+	MLPutString(w_.link, result.c_str());
+}
+
+template <>
+void mathematica::result_writer<std::shared_ptr<basic_matrix<float>>, void>::operator()(const std::shared_ptr<basic_matrix<float>> &result)
+{
+	if (w_.matrices_as_images())
+		MLPutFunction(w_.link, "Image", 1);
+
+	MLPutReal32Array(w_.link, result->data(), result->dims(), NULL, result->depth());
 }
 
 #if OMW_INCLUDE_MAIN
