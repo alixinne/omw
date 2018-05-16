@@ -620,7 +620,7 @@ class mathematica : public wrapper_base
 		 */
 		void operator()(const T0& arg0, const Types&... results)
 		{
-			MLPutFunction(w_.link, "List", sizeof...(Types));
+			MLPutFunction(w_.link, "List", sizeof...(Types) + 1);
 
 			int _[] = { (w_.write_result<T0>(arg0), 0), (w_.write_result<Types>(results), 0)... };
 			(void)_;
