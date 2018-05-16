@@ -146,7 +146,7 @@ template <typename T> class vector_matrix : public basic_matrix<T>
 template <typename T> class ref_matrix : public basic_matrix<T>
 {
 	const std::vector<T> &m_vec;
-	const std::vector<int> &m_dims;
+	const std::vector<int> m_dims;
 
 	public:
 	/**
@@ -198,6 +198,20 @@ template <typename T> class ref_matrix : public basic_matrix<T>
 	 */
 	ref_matrix(const std::vector<T> &vec, const std::vector<int> &dims)
 	: m_vec(vec), m_dims(dims)
+	{
+	}
+
+	/**
+	 * @brief Initializes a new instance of the omw::ref_matrix class based
+	 * on a reference to a std::vector.
+	 *
+	 * @param vec Vector that holds the contents of the matrix
+	 * @param dims See #dims
+	 * @param depth See #depth
+	 */
+	template <size_t Depth>
+	ref_matrix(const std::vector<T> &vec, const std::array<int, Depth> &dims)
+	: m_vec(vec), m_dims(dims.begin(), dims.end())
 	{
 	}
 
