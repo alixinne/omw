@@ -384,6 +384,162 @@ class mathematica : public wrapper_base
 	}
 
 	/**
+	 * @brief Helper class to read a list of tuples
+	 */
+	template <class... Types>
+	class param_list_reader
+	{
+		static constexpr const bool is_tuple_reader = sizeof...(Types) > 1;
+
+		typedef param_list_reader<Types...> self_type;
+
+		private:
+		mathematica &w_;
+		size_t first_idx_;
+		size_t count_;
+		const std::string name_;
+
+		public:
+		/**
+		 * @brief Initializes a new instance of the param_list_reader class
+		 *
+		 * @param w         Wrapper to read parameters from
+		 * @param first_idx First parameter index
+		 * @param name      Name of the tuples to read
+		 */
+		param_list_reader(mathematica &w, size_t first_idx, const std::string &name)
+			: w_(w),
+			  first_idx_(first_idx),
+			  name_(name)
+		{
+			long cnt;
+			if (w.current_param_idx_ != first_idx)
+			{
+				throw std::runtime_error("Invalid param list reader index");
+			}
+
+			if (!MLCheckFunction(w.link, "List", &cnt))
+			{
+				MLClearError(w.link);
+				throw std::runtime_error("Invalid param list head");
+			}
+
+			count_ = static_cast<size_t>(cnt);
+		}
+
+		/**
+		 * @brief Tuple list iterator
+		 */
+		class iterator
+		{
+			private:
+			self_type &reader_;
+			size_t iterator_idx_;
+
+			public:
+			/**
+			 * @brief Initializes a new tuple list iterator
+			 *
+			 * @param reader       Reader managing the tuple list
+			 * @param iterator_idx Index in the tuple list
+			 */
+			iterator(self_type &reader, size_t iterator_idx)
+				: reader_(reader), iterator_idx_(iterator_idx)
+			{
+			}
+
+			/**
+			 * @brief Obtains the current parameter
+			 *
+			 * As this methods relies on mathematica#get_param, it should be
+			 * called only once
+			 *
+			 * @return Parameter value
+			 */
+			template<bool tuple_reader_q = self_type::is_tuple_reader>
+			typename std::enable_if<tuple_reader_q, std::tuple<Types...>>::type operator*()
+			{
+				return reader_.w_.get_param<std::tuple<Types...>>(iterator_idx_ + reader_.first_idx_, reader_.name_);
+			}
+
+			/**
+			 * @brief Obtains the current tuple
+			 *
+			 * As this methods relies on mathematica#get_param, it should be
+			 * called only once
+			 *
+			 * @return Parameter value
+			 */
+			template<bool tuple_reader_q = self_type::is_tuple_reader>
+			typename std::enable_if<(!tuple_reader_q), std::tuple_element_t<0, std::tuple<Types...>>>::type operator*()
+			{
+				return reader_.w_.get_param<std::tuple_element_t<0, std::tuple<Types...>>>(iterator_idx_ + reader_.first_idx_, reader_.name_);
+			}
+
+			/**
+			 * @brief Moves this iterator to the next tuple in the list
+			 *
+			 * @return Updated iterator
+			 */
+			const iterator& operator++()
+			{
+				iterator_idx_++;
+				return *this;
+			}
+
+			/**
+			 * @brief Moves this iterator to the next tuple in the list
+			 *
+			 * @return Previous iterator
+			 */
+			iterator operator++(int)
+			{
+				iterator result = *this;
+				++(*this);
+				return result;
+			}
+
+			/**
+			 * @brief Tests if this iterator and \p other are different
+			 */
+			bool operator!=(const iterator &other) const
+			{
+				return iterator_idx_ != other.iterator_idx_;
+			}
+		};
+
+		/**
+		 * @brief Gets an iterator to the beginning of the tuple list
+		 */
+		iterator begin()
+		{
+			return iterator(*this, 0);
+		}
+
+		/**
+		 * @brief Gets an iterator past the end of the tuple list
+		 */
+		iterator end()
+		{
+			return iterator(*this, count_);
+		}
+	};
+
+	/**
+	 * @brief Reads a list of parameters as tuples or values of the given types
+	 *
+	 * @param first_idx Index of the first parameter object to start reading tuples from
+	 * @param name      Name of the tuples to read
+	 *
+	 * @return Object that can be iterated once using foreach, whose items are the read parameters
+	 */
+	template<typename... Types>
+	auto get_params(size_t first_idx, const std::string &name)
+	{
+		return param_list_reader<Types...>(*this, first_idx, name);
+	}
+
+	/**
 	 * @brief Runs a function using the state of the link associated with this interface
 	 * wrapper.
 	 * @param fun Function to invoke when the link is ready.
