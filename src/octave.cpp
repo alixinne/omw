@@ -23,6 +23,31 @@ octave::octave(void *sym, std::function<void(void)> userInitializer)
 	}
 }
 
+octave_value_list &octave::result()
+{
+	if (result_stack_.empty())
+		return result_;
+	return *result_stack_.top();
+}
+
+void octave::push_result()
+{
+	if (result_stack_.empty())
+	{
+		result_stack_.push(&result_);
+	}
+	else
+	{
+		result_.append(octave_value_list());
+		result_stack_.push(reinterpret_cast<octave_value_list*>(&result_(result_.length() - 1)));
+	}
+}
+
+void octave::pop_result()
+{
+	result_stack_.pop();
+}
+
 void octave::set_autoload(const std::string &name)
 {
 	if (autoload_path_.empty())
@@ -64,6 +89,11 @@ octave_value_list octave::run_function(const octave_value_list &args, std::funct
 	}
 
 	return octave_value_list();
+}
+
+octave::result_writer_base::result_writer_base(octave &w)
+	: w_(w)
+{
 }
 
 void octave::send_failure(const std::string &exceptionMessage, const std::string &messageName)
@@ -210,6 +240,25 @@ octave::param_reader<std::shared_ptr<basic_matrix<float>>>::try_read(size_t para
 			}
 
 	return vector_matrix<float>::make(std::move(f), std::move(dims));
+}
+
+template <>
+void octave::result_writer<std::shared_ptr<basic_matrix<float>>, void>::operator()(const std::shared_ptr<basic_matrix<float>> &result)
+{
+	// Create the NDArray
+	auto dims(dim_vector(result->dims()[0], result->dims()[1], result->dims()[2]));
+	NDArray data(dims);
+
+	// Need to copy from float* to double*
+	for (int i = 0; i < result->dims()[0]; ++i)
+		for (int j = 0; j < result->dims()[1]; ++j)
+			for (int k = 0; k < result->dims()[2]; ++k)
+			{
+				size_t idx = (i * result->dims()[1] + j) * result->dims()[2] + k;
+				data(i, j, k) = static_cast<double>(result->data()[idx]);
+			}
+
+	w_.result().append(data);
 }
 
 #endif /* OMW_OCTAVE */

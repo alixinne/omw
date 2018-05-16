@@ -31,6 +31,8 @@ class octave : public wrapper_base
 	octave_value_list result_;
 	/// Resolved path for autoloading
 	std::string autoload_path_;
+	/// Result sublist stack
+	std::stack<octave_value_list*> result_stack_;
 
 	public:
 	/**
@@ -45,7 +47,17 @@ class octave : public wrapper_base
 	 *
 	 * @return Reference to the octave_value_list to be returned
 	 */
-	inline octave_value_list &result() { return result_; }
+	octave_value_list &result();
+
+	/**
+	 * @brief Pushes a new sublist onto the result stack
+	 */
+	void push_result();
+
+	/**
+	 * @brief Pops the top sublist of the result stack
+	 */
+	void pop_result();
 
 	/**
 	 * @brief Get the arguments object for the current function call.
@@ -346,6 +358,98 @@ class octave : public wrapper_base
 	octave_value_list run_function(const octave_value_list &args, std::function<void(octave &)> fun);
 
 	/**
+	 * @brief Base class for wrapper result writers
+	 */
+	struct result_writer_base
+	{
+		protected:
+		/// Reference to the object that created this result writer
+		octave &w_;
+		
+		/**
+		 * @brief Initializes a new instance of the result_writer_base class
+		 *
+		 * @param w Wrapper this instance will write results to
+		 */
+		result_writer_base(octave &w);
+	};
+
+	/**
+	 * @brief Template declaration for result writers
+	 */
+	template <class T, typename Enable = void, class... Types> struct result_writer;
+
+	/**
+	 * @brief Atomic result writer template
+	 */
+	template <class T0>
+	struct result_writer<T0, typename std::enable_if<is_simple_param_type<T0>::value>::type> : public result_writer_base
+	{
+		/// Type of the result
+		typedef T0 result_type;
+
+		/**
+		 * @brief Initialize a new instance of the result_writer class
+		 *
+		 * @param w Wrapper to write the result to
+		 */
+		result_writer(octave &w) : result_writer_base(w) {}
+
+		/**
+		 * @brief Writes the result to the wrapper instance
+		 *
+		 * @param result Result value to write
+		 */
+		void operator()(const result_type &result)
+		{
+			w_.result().append(result);
+		}
+	};
+
+	/**
+	 * @brief Multiple result writer template
+	 */
+	template <class T0, class... Types>
+	struct result_writer<T0, typename std::enable_if<(sizeof...(Types) > 0)>::type, Types...>
+	: public result_writer_base
+	{
+		/**
+		 * @brief Initializes a new instance of the result_writer class.
+		 *
+		 * @param w Wrapper to read parameters from.
+		 */
+		result_writer(octave &w) : result_writer_base(w) {}
+
+		/**
+		 * @brief Writes the results to the wrapper instance
+		 *
+		 * @param result Result value to write
+		 */
+		void operator()(const T0& arg0, const Types&... results)
+		{
+			w_.push_result();
+
+			int _[] = { (w_.write_result<T0>(arg0), 0), (w_.write_result<Types>(results), 0)... };
+			(void)_;
+
+			w_.pop_result();
+		}
+	};
+
+	/**
+	 * @brief Writes the result \p args to the Octave instance represented by this wrapper
+	 *
+	 * @param args Results to write
+	 */
+	template <class T0, class... Types>
+	void write_result(const T0& arg0, const Types&... args)
+	{
+		result_writer<typename std::remove_reference<T0>::type, void,
+					  typename std::remove_reference<Types>::type...>(*this)(
+							arg0, args...);
+	}
+
+	/**
 	 * @brief Sends a failure message on the link object to notify of a failure.
 	 * @param exceptionMessage Text to send in the message
 	 * @param messageName      Name of the format string to use
@@ -381,6 +485,9 @@ template <>
 std::shared_ptr<basic_matrix<float>>
 octave::param_reader<std::shared_ptr<basic_matrix<float>>>::try_read(size_t paramIdx, const std::string &paramName,
 																	 bool &success, bool getData);
+
+template <>
+void octave::result_writer<std::shared_ptr<basic_matrix<float>>, void>::operator()(const std::shared_ptr<basic_matrix<float>> &result);
 }
 
 #define OM_RESULT_OCTAVE(w, code) (code)()
