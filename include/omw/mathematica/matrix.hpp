@@ -19,14 +19,14 @@ namespace omw
 template <typename T> class mathematica_matrix : public basic_matrix<T>
 {
 public:
-	typedef void(*deleter_function)(MLINK, T *, int *, char **, int);
+	typedef void(*deleter_function)(WSLINK, T *, int *, char **, int);
 
 private:
 	T *m_data;
 	int *m_dims;
 	int m_depth;
 	char **m_heads;
-	MLINK m_link;
+	WSLINK m_link;
 	deleter_function m_fun;
 
 public:
@@ -88,7 +88,7 @@ public:
 	 * @param link    Mathematica link object that this matrix depends on
 	 * @param deleter Deleter function to release allocated memory
 	 */
-	mathematica_matrix(T *data, int *dims, int depth, char **heads, MLINK link, deleter_function deleter)
+	mathematica_matrix(T *data, int *dims, int depth, char **heads, WSLINK link, deleter_function deleter)
 	: m_data(data), m_dims(dims), m_depth(depth), m_heads(heads), m_link(link), m_fun(deleter)
 	{
 	}

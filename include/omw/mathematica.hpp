@@ -12,7 +12,7 @@
 
 #include <sstream>
 
-#include "mathlink.h"
+#include "wstp.h"
 
 #include "omw/pre.hpp"
 #include "omw/type_traits.hpp"
@@ -24,7 +24,7 @@ namespace omw
 {
 
 /**
- * @brief Represents the interface wrapper for Mathematica (MathLink) code.
+ * @brief Represents the interface wrapper for Mathematica (WSTP) code.
  */
 class mathematica : public wrapper_base
 {
@@ -37,7 +37,7 @@ class mathematica : public wrapper_base
 
 	public:
 	/// Reference to the link object to use
-	MLINK &link;
+	WSLINK &link;
 
 	/**
 	 * @brief Constructs a new Mathematica interface wrapper
@@ -46,7 +46,7 @@ class mathematica : public wrapper_base
 	 * @param link            Link object to use to communicate with the Kernel
 	 * @param userInitializer User initialization function.
 	 */
-	mathematica(const std::string &mathNamespace, MLINK &link,
+	mathematica(const std::string &mathNamespace, WSLINK &link,
 				std::function<void(void)> userInitializer = std::function<void(void)>());
 
 	/**
@@ -184,22 +184,22 @@ class mathematica : public wrapper_base
 			check_parameter_idx(paramIdx, paramName);
 
 			// Accept Null as the empty value
-			if (MLGetType(w_.link) == MLTKSYM)
+			if (WSGetType(w_.link) == WSTKSYM)
 			{
 				// There is a symbol, try to get it, but save a mark
-				MLinkMark *mark = MLCreateMark(w_.link);
+				MLinkMark *mark = WSCreateMark(w_.link);
 				std::shared_ptr<MLinkMark> markPtr(mark, [this](MLinkMark *m) {
-					MLDestroyMark(w_.link, m);
+					WSDestroyMark(w_.link, m);
 				});
 
 				const char *symbolName;
-				if (!MLGetSymbol(w_.link, &symbolName))
+				if (!WSGetSymbol(w_.link, &symbolName))
 				{
-					MLClearError(w_.link);
-					MLDestroyMark(w_.link, mark);
+					WSClearError(w_.link);
+					WSDestroyMark(w_.link, mark);
 
 					std::stringstream ss;
-					ss << "MathLink API state is not coherent, expected a symbol while reading "
+					ss << "WSTP API state is not coherent, expected a symbol while reading "
 						  "parameter "
 					   << paramName << " at index " << paramIdx;
 					throw std::runtime_error(ss.str());
@@ -207,7 +207,7 @@ class mathematica : public wrapper_base
 
 				// We passed the mark, check the symbol
 				std::shared_ptr<const char> symbolPtr(symbolName, [this](const char *symb) {
-					MLReleaseSymbol(w_.link, symb);
+					WSReleaseSymbol(w_.link, symb);
 				});
 
 				if (strcmp(symbolName, "Null") == 0)
@@ -219,7 +219,7 @@ class mathematica : public wrapper_base
 				else
 				{
 					// It was something else, rollback
-					MLSeekToMark(w_.link, mark, 0);
+					WSSeekToMark(w_.link, mark, 0);
 
 					// Try to decode the symbol as a parameter (ex: nullable bool)
 					return return_type(w_.get_param<T>(paramIdx, paramName));
@@ -277,9 +277,9 @@ class mathematica : public wrapper_base
 
 			// We assume a tuple is made from a Mathematica list
 			long nargs;
-			if (!MLCheckFunction(w_.link, "List", &nargs))
+			if (!WSCheckFunction(w_.link, "List", &nargs))
 			{
-				MLClearError(w_.link);
+				WSClearError(w_.link);
 
 				std::stringstream ss;
 				ss << "Expected a List for tuple parameter " << paramName << " at index " << firstParamIdx;
@@ -418,9 +418,9 @@ class mathematica : public wrapper_base
 				throw std::runtime_error("Invalid param list reader index");
 			}
 
-			if (!MLCheckFunction(w.link, "List", &cnt))
+			if (!WSCheckFunction(w.link, "List", &cnt))
 			{
-				MLClearError(w.link);
+				WSClearError(w.link);
 				throw std::runtime_error("Invalid param list head");
 			}
 
@@ -620,7 +620,7 @@ class mathematica : public wrapper_base
 		 */
 		void operator()(const T0& arg0, const Types&... results)
 		{
-			MLPutFunction(w_.link, "List", sizeof...(Types) + 1);
+			WSPutFunction(w_.link, "List", sizeof...(Types) + 1);
 
 			int _[] = { (w_.write_result<T0>(arg0), 0), (w_.write_result<Types>(results), 0)... };
 			(void)_;
@@ -628,7 +628,7 @@ class mathematica : public wrapper_base
 	};
 
 	/**
-	 * @brief Writes the result \p args to the MathLink represented by this wrapper
+	 * @brief Writes the result \p args to the WSTP represented by this wrapper
 	 *
 	 * @param args Results to write to the link
 	 */
