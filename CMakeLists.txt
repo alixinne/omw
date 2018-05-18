@@ -7,7 +7,7 @@ include(GNUInstallDirs)
 
 # Load Octave and Mathematica packages from cmake/
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
-find_package(Mathematica COMPONENTS MathLink)
+find_package(Mathematica COMPONENTS WSTP)
 find_package(Octave)
 
 # Set directories
@@ -60,9 +60,9 @@ if(Mathematica_FOUND)
   target_compile_definitions(omw_mathematica PUBLIC
     OMW_MATHEMATICA=1 OMW_INCLUDE_MAIN=1)
   target_include_directories(omw_mathematica PUBLIC
-    ${Mathematica_MathLink_INCLUDE_DIR})
+    ${Mathematica_WSTP_INCLUDE_DIR})
   target_link_libraries(omw_mathematica INTERFACE
-    ${Mathematica_MathLink_LIBRARIES})
+    ${Mathematica_WSTP_LIBRARIES})
 
   # We need to put some variables in the CMakeCache because
   # omw_add_mathematica will be invoked from an outer scope
@@ -91,7 +91,7 @@ if(Mathematica_FOUND)
       # Build target path
       set(MPREP_SOURCE_TARGET "${CMAKE_CURRENT_BINARY_DIR}/${MPREP_SOURCE_NAME}.c")
       # Prepare target
-      Mathematica_MathLink_MPREP_TARGET(${MPREP_SOURCE} OUTPUT ${MPREP_SOURCE_TARGET})
+      Mathematica_WSTP_WSPREP_TARGET(${MPREP_SOURCE} OUTPUT ${MPREP_SOURCE_TARGET})
       # Add to list of MPREP sources
       list(APPEND ML_MPREP_TARGETS ${MPREP_SOURCE_TARGET})
     endforeach()

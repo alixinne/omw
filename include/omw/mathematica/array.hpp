@@ -19,12 +19,12 @@ namespace omw
 template <typename T> class mathematica_array : public basic_array<T>
 {
 public:
-	typedef void(*deleter_function)(MLINK, T *, int);
+	typedef void(*deleter_function)(WSLINK, T *, int);
 
 private:
 	T *m_data;
 	size_t m_length;
-	MLINK m_link;
+	WSLINK m_link;
 	deleter_function m_fun;
 
 public:
@@ -67,7 +67,7 @@ public:
 	 * @param link    Mathematica link object
 	 * @param deleter Deleter function
 	 */
-	mathematica_array(T *data, size_t length, MLINK link, deleter_function deleter) : m_data(data), m_length(length), m_link(link), m_fun(deleter) {}
+	mathematica_array(T *data, size_t length, WSLINK link, deleter_function deleter) : m_data(data), m_length(length), m_link(link), m_fun(deleter) {}
 
 	/**
 	 * @brief Builds an omw::mathematica_array &lt;T&gt; from a std::vector &lt;T&gt;.

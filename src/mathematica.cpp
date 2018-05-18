@@ -18,7 +18,7 @@ using namespace omw;
  * @brief Remove escape sequences from a string returned by Mathematica
  *
  * Mathematica prefers sending strings with special characters escaped, even on
- * MathLink.  This method evaluates the escape sequences to the actual
+ * WSTP.  This method evaluates the escape sequences to the actual
  * characters and returns the result.
  *
  * @param source Escaped string
@@ -97,7 +97,7 @@ std::string mathematica_unescape(const std::string &source)
 	return unescaped.str();
 }
 
-mathematica::mathematica(const std::string &mathNamespace, MLINK &link, std::function<void(void)> userInitializer)
+mathematica::mathematica(const std::string &mathNamespace, WSLINK &link, std::function<void(void)> userInitializer)
 : wrapper_base(std::forward<std::function<void(void)>>(userInitializer)),
   current_param_idx_(std::numeric_limits<size_t>::max()), math_namespace_(mathNamespace), link(link)
 {
@@ -127,7 +127,7 @@ bool mathematica::run_function(std::function<void(mathematica &)> fun)
 
 		if (!has_result_)
 		{
-			MLPutSymbol(link, "Null");
+			WSPutSymbol(link, "Null");
 		}
 	}
 	catch (std::exception &ex)
@@ -152,18 +152,18 @@ mathematica::result_writer_base::result_writer_base(mathematica &w)
 
 void mathematica::send_failure(const std::string &exceptionMessage, const std::string &messageName)
 {
-	MLNewPacket(link);
-	MLPutFunction(link, "EvaluatePacket", 1);
-	MLPutFunction(link, "Message", 2);
-	MLPutFunction(link, "MessageName", 2);
-	MLPutSymbol(link, math_namespace_.c_str());
-	MLPutString(link, messageName.c_str());
-	MLPutString(link, exceptionMessage.c_str());
-	MLFlush(link);
-	MLNextPacket(link);
+	WSNewPacket(link);
+	WSPutFunction(link, "EvaluatePacket", 1);
+	WSPutFunction(link, "Message", 2);
+	WSPutFunction(link, "MessageName", 2);
+	WSPutSymbol(link, math_namespace_.c_str());
+	WSPutString(link, messageName.c_str());
+	WSPutString(link, exceptionMessage.c_str());
+	WSFlush(link);
+	WSNextPacket(link);
 
-	MLNewPacket(link);
-	MLPutSymbol(link, "$Failed");
+	WSNewPacket(link);
+	WSPutSymbol(link, "$Failed");
 
 	// Note that send_failure sends a result
 	has_result_ = true;
@@ -171,8 +171,8 @@ void mathematica::send_failure(const std::string &exceptionMessage, const std::s
 
 std::shared_ptr<MLinkMark> mathematica::place_mark()
 {
-	MLinkMark *mark = MLCreateMark(link);
-	return std::shared_ptr<MLinkMark>(mark, [this](MLinkMark *m) { MLDestroyMark(link, m); });
+	MLinkMark *mark = WSCreateMark(link);
+	return std::shared_ptr<MLinkMark>(mark, [this](MLinkMark *m) { WSDestroyMark(link, m); });
 }
 
 template <>
@@ -188,9 +188,9 @@ bool mathematica::param_reader<bool>::try_read(size_t paramIdx, const std::strin
 	auto mark = w_.place_mark();
 
 	// Get symbol, on error this is not a boolean
-	if (!MLGetSymbol(w_.link, &paramSymbol))
+	if (!WSGetSymbol(w_.link, &paramSymbol))
 	{
-		MLClearError(w_.link);
+		WSClearError(w_.link);
 
 		success = false;
 		return paramValue;
@@ -212,7 +212,7 @@ bool mathematica::param_reader<bool>::try_read(size_t paramIdx, const std::strin
 	}
 
 	// Delete symbol, no longer used
-	MLReleaseSymbol(w_.link, paramSymbol);
+	WSReleaseSymbol(w_.link, paramSymbol);
 
 	// Only advance param index if we want to consume the value
 	if (success && getData)
@@ -220,7 +220,7 @@ bool mathematica::param_reader<bool>::try_read(size_t paramIdx, const std::strin
 
 	// On failure or on type test mode, do not consume value
 	if (!success || !getData)
-		MLSeekToMark(w_.link, mark.get(), 0);
+		WSSeekToMark(w_.link, mark.get(), 0);
 
 	return paramValue;
 }
@@ -236,9 +236,9 @@ int mathematica::param_reader<int>::try_read(size_t paramIdx, const std::string 
 		// Get the integer value
 		int paramValue(0);
 
-		if (!MLGetInteger32(w_.link, &paramValue))
+		if (!WSGetInteger32(w_.link, &paramValue))
 		{
-			MLClearError(w_.link);
+			WSClearError(w_.link);
 
 			success = false;
 			return paramValue;
@@ -251,7 +251,7 @@ int mathematica::param_reader<int>::try_read(size_t paramIdx, const std::string 
 	else
 	{
 		// Test the value is an int
-		success = (MLGetType(w_.link) == MLTKINT);
+		success = (WSGetType(w_.link) == WSTKINT);
 
 		return 0;
 	}
@@ -266,11 +266,11 @@ unsigned int mathematica::param_reader<unsigned int>::try_read(size_t paramIdx, 
 	if (getData)
 	{
 		// Get the integer value
-		mlint64 paramValue(0);
+		wsint64 paramValue(0);
 
-		if (!MLGetInteger64(w_.link, &paramValue))
+		if (!WSGetInteger64(w_.link, &paramValue))
 		{
-			MLClearError(w_.link);
+			WSClearError(w_.link);
 
 			success = false;
 			return paramValue;
@@ -283,7 +283,7 @@ unsigned int mathematica::param_reader<unsigned int>::try_read(size_t paramIdx, 
 	else
 	{
 		// Test the value is an int
-		success = (MLGetType(w_.link) == MLTKINT);
+		success = (WSGetType(w_.link) == WSTKINT);
 
 		return 0;
 	}
@@ -300,9 +300,9 @@ float mathematica::param_reader<float>::try_read(size_t paramIdx, const std::str
 		// Get the float value
 		float paramValue(0.0f);
 
-		if (!MLGetReal32(w_.link, &paramValue))
+		if (!WSGetReal32(w_.link, &paramValue))
 		{
-			MLClearError(w_.link);
+			WSClearError(w_.link);
 
 			success = false;
 			return paramValue;
@@ -315,7 +315,7 @@ float mathematica::param_reader<float>::try_read(size_t paramIdx, const std::str
 	else
 	{
 		// Test the value is a float
-		success = (MLGetType(w_.link) == MLTKREAL);
+		success = (WSGetType(w_.link) == WSTKREAL);
 
 		return 0.0f;
 	}
@@ -331,9 +331,9 @@ std::string mathematica::param_reader<std::string>::try_read(size_t paramIdx, co
 	{
 		// Get the string value
 		const char *paramValue;
-		if (!MLGetString(w_.link, &paramValue))
+		if (!WSGetString(w_.link, &paramValue))
 		{
-			MLClearError(w_.link);
+			WSClearError(w_.link);
 
 			success = false;
 			return std::string();
@@ -342,14 +342,14 @@ std::string mathematica::param_reader<std::string>::try_read(size_t paramIdx, co
 		w_.current_param_idx_++;
 
 		std::string paramResult(paramValue);
-		MLReleaseString(w_.link, paramValue);
+		WSReleaseString(w_.link, paramValue);
 
 		return mathematica_unescape(paramResult);
 	}
 	else
 	{
 		// Test the value is a string
-		success = (MLGetType(w_.link) == MLTKSTR);
+		success = (WSGetType(w_.link) == WSTKSTR);
 
 		return std::string();
 	}
@@ -369,9 +369,9 @@ mathematica::param_reader<std::shared_ptr<basic_array<float>>>::try_read(size_t 
 	// Place mark to allow rollback if needed
 	auto mark = w_.place_mark();
 
-	if (!MLGetReal32List(w_.link, &arrayData, &arrayLen))
+	if (!WSGetReal32List(w_.link, &arrayData, &arrayLen))
 	{
-		MLClearError(w_.link);
+		WSClearError(w_.link);
 
 		success = false;
 		return {};
@@ -381,13 +381,13 @@ mathematica::param_reader<std::shared_ptr<basic_array<float>>>::try_read(size_t 
 	{
 		w_.current_param_idx_++;
 
-		return mathematica_array<float>::make(arrayData, arrayLen, w_.link, MLReleaseReal32List);
+		return mathematica_array<float>::make(arrayData, arrayLen, w_.link, WSReleaseReal32List);
 	}
 	else
 	{
 		// Not in data mode, release list and rollback
-		MLReleaseReal32List(w_.link, arrayData, arrayLen);
-		MLSeekToMark(w_.link, mark.get(), 0);
+		WSReleaseReal32List(w_.link, arrayData, arrayLen);
+		WSSeekToMark(w_.link, mark.get(), 0);
 
 		return {};
 	}
@@ -409,9 +409,9 @@ mathematica::param_reader<std::shared_ptr<basic_matrix<float>>>::try_read(size_t
 	// Place mark to allow rollback if needed
 	auto mark = w_.place_mark();
 
-	if (!MLGetReal32Array(w_.link, &arrayData, &arrayDims, &arrayHeads, &arrayDepth))
+	if (!WSGetReal32Array(w_.link, &arrayData, &arrayDims, &arrayHeads, &arrayDepth))
 	{
-		MLClearError(w_.link);
+		WSClearError(w_.link);
 
 		success = false;
 		return {};
@@ -421,51 +421,63 @@ mathematica::param_reader<std::shared_ptr<basic_matrix<float>>>::try_read(size_t
 	{
 		w_.current_param_idx_++;
 
-		return mathematica_matrix<float>::make(arrayData, arrayDims, arrayDepth, arrayHeads, w_.link, MLReleaseReal32Array);
+		return mathematica_matrix<float>::make(arrayData, arrayDims, arrayDepth, arrayHeads, w_.link, WSReleaseReal32Array);
 	}
 	else
 	{
 		// Not in data mode, release matrix and rollback
-		MLReleaseReal32Array(w_.link, arrayData, arrayDims, arrayHeads, arrayDepth);
-		MLSeekToMark(w_.link, mark.get(), 0);
+		WSReleaseReal32Array(w_.link, arrayData, arrayDims, arrayHeads, arrayDepth);
+		WSSeekToMark(w_.link, mark.get(), 0);
 
 		return {};
 	}
 }
 
 template <>
+void mathematica::result_writer<int, void>::operator()(const int &result)
+{
+	WSPutInteger32(w_.link, result);
+}
+
+template <>
+void mathematica::result_writer<unsigned int, void>::operator()(const unsigned int &result)
+{
+	WSPutInteger64(w_.link, static_cast<wsint64>(result));
+}
+
+template <>
 void mathematica::result_writer<float, void>::operator()(const float &result)
 {
-	MLPutReal32(w_.link, result);
+	WSPutReal32(w_.link, result);
 }
 
 
 template <>
 void mathematica::result_writer<double, void>::operator()(const double &result)
 {
-	MLPutReal64(w_.link, result);
+	WSPutReal64(w_.link, result);
 }
 
 template <>
 void mathematica::result_writer<std::string, void>::operator()(const std::string &result)
 {
-	MLPutString(w_.link, result.c_str());
+	WSPutString(w_.link, result.c_str());
 }
 
 template <>
 void mathematica::result_writer<std::shared_ptr<basic_matrix<float>>, void>::operator()(const std::shared_ptr<basic_matrix<float>> &result)
 {
 	if (w_.matrices_as_images())
-		MLPutFunction(w_.link, "Image", 1);
+		WSPutFunction(w_.link, "Image", 1);
 
-	MLPutReal32Array(w_.link, result->data(), result->dims(), NULL, result->depth());
+	WSPutReal32Array(w_.link, result->data(), result->dims(), NULL, result->depth());
 }
 
 #if OMW_INCLUDE_MAIN
 
-int omw_main(int argc, char *argv[]) { return MLMain(argc, argv); }
+int omw_main(int argc, char *argv[]) { return WSMain(argc, argv); }
 
-// Entry point for MathLink
+// Entry point for WSTP
 
 #if WINDOWS_MATHLINK
 
@@ -482,9 +494,9 @@ int PASCAL WinMain(HINSTANCE hinstCurrent, HINSTANCE hinstPrevious, LPSTR lpszCm
 
 	hinstPrevious = hinstPrevious; /* suppress warning */
 
-	if (!MLInitializeIcon(hinstCurrent, nCmdShow))
+	if (!WSInitializeIcon(hinstCurrent, nCmdShow))
 		return 1;
-	MLScanString(argv, &argv_end, &lpszCmdLine, &buff_start);
+	WSScanString(argv, &argv_end, &lpszCmdLine, &buff_start);
 	return omw_main((int)(argv_end - argv), argv);
 }
 
