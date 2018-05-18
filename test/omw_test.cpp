@@ -6,9 +6,7 @@ template <typename TWrapper> void impl_omw_test_bool(TWrapper &w)
 
 	std::string result = b ? "true" : "false";
 
-	OM_RESULT_OCTAVE(w, [&]() { w.result().append(result); });
-
-	OM_RESULT_MATHEMATICA(w, [&]() { MLPutString(w.link, result.c_str()); });
+	w.write_result(result);
 }
 
 template <typename TWrapper, typename T> void impl_omw_test_times_t(TWrapper &w)
@@ -18,9 +16,7 @@ template <typename TWrapper, typename T> void impl_omw_test_times_t(TWrapper &w)
 
 	T result = x * y;
 
-	OM_RESULT_OCTAVE(w, [&]() { w.result().append(result); });
-
-	OM_RESULT_MATHEMATICA(w, [&]() { MLPutInteger32(w.link, result); });
+	w.write_result(result);
 }
 
 template <typename TWrapper> void impl_omw_test_times(TWrapper &w)
@@ -45,9 +41,7 @@ template <typename TWrapper> void impl_omw_test_concat(TWrapper &w)
 
 	std::string result = a + b;
 
-	OM_RESULT_OCTAVE(w, [&]() { w.result().append(result); });
-
-	OM_RESULT_MATHEMATICA(w, [&]() { MLPutString(w.link, result.c_str()); });
+	w.write_result(result);
 }
 
 #if OMW_OCTAVE
