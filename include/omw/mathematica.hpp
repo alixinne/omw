@@ -684,6 +684,12 @@ mathematica::param_reader<std::shared_ptr<basic_matrix<float>>>::try_read(size_t
 																		  bool &success, bool getData);
 
 template <>
+void mathematica::result_writer<int, void>::operator()(const int &result);
+
+template <>
+void mathematica::result_writer<unsigned int, void>::operator()(const unsigned int &result);
+
+template <>
 void mathematica::result_writer<float, void>::operator()(const float &result);
 
 template <>
