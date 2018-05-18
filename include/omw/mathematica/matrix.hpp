@@ -10,13 +10,6 @@
 
 #if OMW_MATHEMATICA
 
-#include <sstream>
-
-#include "mathlink.h"
-
-#include "omw/pre.hpp"
-#include "omw/type_traits.hpp"
-
 namespace omw
 {
 
