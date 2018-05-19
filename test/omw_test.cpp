@@ -44,6 +44,18 @@ template <typename TWrapper> void impl_omw_test_concat(TWrapper &w)
 	w.write_result(result);
 }
 
+template <typename TWrapper> void impl_omw_test_concat_pl(TWrapper &w)
+{
+	std::stringstream ss;
+
+	for (auto item : w.template get_params<std::string>(0, "Part"))
+	{
+		ss << item;
+	}
+
+	w.write_result(ss.str());
+}
+
 #if OMW_OCTAVE
 
 static omw::octave wrapper(reinterpret_cast<void *>(&impl_omw_test_times<omw::octave>));
@@ -55,6 +67,7 @@ DEFUN_DLD(omw_tests, args, , "omw_tests() initializes the omw_test oct file")
 	wrapper.set_autoload("omw_test_utimes");
 	wrapper.set_autoload("omw_test_ftimes");
 	wrapper.set_autoload("omw_test_concat");
+	wrapper.set_autoload("omw_test_concat_pl");
 
 	return octave_value();
 }
@@ -93,3 +106,5 @@ OM_DEFUN(omw_test_utimes, "omw_test_utimes(x, y) returns x * y")
 OM_DEFUN(omw_test_ftimes, "omw_test_ftimes(x, y) returns x * y")
 
 OM_DEFUN(omw_test_concat, "omw_test_concat(a, b) returns a . b")
+
+OM_DEFUN(omw_test_concat_pl, "omw_test_concat_pl(a, b, ...) returns a . b . ... ")

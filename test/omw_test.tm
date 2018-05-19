@@ -48,5 +48,16 @@ void omw_test_concat P(( ));
 :ReturnType:     Manual
 :End:
 
+void omw_test_concat_pl P(( ));
+
+:Begin:
+:Function:       omw_test_concat_pl
+:Pattern:        OmwConcatPl[a__String]
+:Arguments:      { List[a] }
+:ArgumentTypes:  { Manual }
+:ReturnType:     Manual
+:End:
+
+
 :Evaluate: OMW::err = "An error occurred: `1`"
 
