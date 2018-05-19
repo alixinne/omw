@@ -78,9 +78,7 @@ class mathematica : public wrapper_base<mathematica>
 	/**
 	 * @brief Template declaration for parameter readers
 	 */
-	template <class T, typename Enable = void> struct param_reader : public param_reader_base
-	{
-	};
+	template <class T, typename Enable = void> struct param_reader;
 
 	/**
 	 * @brief Atomic parameter reader template
