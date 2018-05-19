@@ -12,7 +12,7 @@
 using namespace omw;
 
 octave::octave(void *sym, std::function<void(void)> userInitializer)
-: wrapper_base(std::forward<std::function<void(void)>>(userInitializer)), current_args_(),
+: wrapper_base<octave>(std::forward<std::function<void(void)>>(userInitializer)), current_args_(),
   result_(), autoload_path_()
 {
 	if (sym)

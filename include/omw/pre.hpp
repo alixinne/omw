@@ -12,7 +12,7 @@ namespace omw
 {
 template <typename T> class basic_array;
 template <typename T> class basic_matrix;
-class wrapper_base;
+template <typename wrapper_impl> class wrapper_base;
 
 #if OMW_MATHEMATICA
 class mathematica;

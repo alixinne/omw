@@ -98,7 +98,7 @@ std::string mathematica_unescape(const std::string &source)
 }
 
 mathematica::mathematica(const std::string &mathNamespace, WSLINK &link, std::function<void(void)> userInitializer)
-: wrapper_base(std::forward<std::function<void(void)>>(userInitializer)),
+: wrapper_base<mathematica>(std::forward<std::function<void(void)>>(userInitializer)),
   current_param_idx_(std::numeric_limits<size_t>::max()), math_namespace_(mathNamespace), link(link)
 {
 }
