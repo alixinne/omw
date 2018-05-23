@@ -13,12 +13,14 @@ omw_add_mathematica(omw_test_mathematica
   PACKAGE_NAME OMW
   MPREP_SOURCES ${OMW_TEST_SRC_DIR}/omw_test.tm
   SOURCES ${OMW_TEST_SRC_DIR}/omw_test.cpp
-  TARGET_PACKAGE_DIR ${OMW_TARGET_DIR})
+  TARGET_PACKAGE_DIR ${OMW_TARGET_DIR}
+  COMPILE_OPTIONS "-Wall")
 
 omw_add_octave(omw_test_octave
   OCT_NAME omw_tests
   SOURCES ${OMW_TEST_SRC_DIR}/omw_test.cpp
-  TARGET_PACKAGE_DIR ${OMW_TARGET_DIR})
+  TARGET_PACKAGE_DIR ${OMW_TARGET_DIR}
+  COMPILE_OPTIONS "-Wall")
 
 # Test procedures
 file(GLOB TEST_FILES ${OMW_T_DIR}/*.t)
