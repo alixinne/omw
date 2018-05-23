@@ -92,10 +92,10 @@ class wrapper_base
 		typedef basic_param_list_reader<impl_type, Types...> base_type;
 
 	protected:
+		wrapper_impl &w_;
 		size_t first_idx_;
 		size_t count_;
 		const std::string name_;
-		wrapper_impl &w_;
 
 		/**
 		 * @brief Initializes a new instance of the basic_param_list_reader class
