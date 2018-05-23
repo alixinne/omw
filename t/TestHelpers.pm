@@ -109,8 +109,8 @@ sub mathematica_prepare {
 	# Append exit wrapper
 	$code = <<MATHEMATICA_CODE;
 On[Assert];
+If[FailureQ[<<$_mathematica_pkg_name`],Exit[]];
 Exit[If[FailureQ[Check[Module[{},
-<<$_mathematica_pkg_name`;
 $code],\$Failed]],1,0]]
 MATHEMATICA_CODE
 
