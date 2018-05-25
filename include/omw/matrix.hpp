@@ -209,8 +209,8 @@ template <typename T> class ref_matrix : public basic_matrix<T>
 	 * @param dims See #dims
 	 * @param depth See #depth
 	 */
-	template <size_t Depth>
-	ref_matrix(const std::vector<T> &vec, const std::array<int, Depth> &dims)
+	template <typename TDim, size_t Depth>
+	ref_matrix(const std::vector<T> &vec, const std::array<TDim, Depth> &dims)
 	: m_vec(vec), m_dims(dims.begin(), dims.end())
 	{
 	}
