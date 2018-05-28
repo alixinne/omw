@@ -5,6 +5,8 @@ project(omw)
 include(CMakeDependentOption)
 include(GNUInstallDirs)
 
+find_package(Boost 1.54 REQUIRED)
+
 # Load Octave and Mathematica packages from cmake/
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 find_package(Mathematica COMPONENTS WSTP)
@@ -60,6 +62,7 @@ if(Mathematica_FOUND)
   target_compile_definitions(omw_mathematica PUBLIC
     OMW_MATHEMATICA=1 OMW_INCLUDE_MAIN=1)
   target_include_directories(omw_mathematica PUBLIC
+    ${Boost_INCLUDE_DIRS}
     ${Mathematica_WSTP_INCLUDE_DIR})
   target_link_libraries(omw_mathematica INTERFACE
     ${Mathematica_WSTP_LIBRARIES})
@@ -185,6 +188,7 @@ if(Octave_FOUND OR OCTAVE_EXECUTABLE)
   target_compile_definitions(omw_octave PUBLIC
     OMW_OCTAVE=1)
   target_include_directories(omw_octave PUBLIC
+    ${Boost_INCLUDE_DIRS}
     ${OCTAVE_INCLUDE_DIRS})
 
   set_shared_options(omw_octave)
