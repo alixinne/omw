@@ -8,7 +8,10 @@ include(GNUInstallDirs)
 find_package(Boost 1.54 REQUIRED)
 
 # Load Octave and Mathematica packages from cmake/
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
+set(CMAKE_MODULE_PATH
+  ${CMAKE_MODULE_PATH}
+  ${CMAKE_CURRENT_SOURCE_DIR}/cmake
+  ${CMAKE_CURRENT_SOURCE_DIR}/cmake/FindMathematica/CMake/Mathematica)
 find_package(Mathematica COMPONENTS WSTP)
 find_package(Octave)
 
