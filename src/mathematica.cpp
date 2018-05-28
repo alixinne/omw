@@ -494,8 +494,6 @@ int PASCAL WinMain(HINSTANCE hinstCurrent, HINSTANCE hinstPrevious, LPSTR lpszCm
 
 	hinstPrevious = hinstPrevious; /* suppress warning */
 
-	if (!WSInitializeIcon(hinstCurrent, nCmdShow))
-		return 1;
 	WSScanString(argv, &argv_end, &lpszCmdLine, &buff_start);
 	return omw_main((int)(argv_end - argv), argv);
 }
