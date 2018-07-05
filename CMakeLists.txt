@@ -30,8 +30,14 @@ set(OMW_SHARED_HEADERS
   ${OMW_INCLUDE_DIR}/omw/wrapper_base.hpp
   ${OMW_INCLUDE_DIR}/omw/type_traits.hpp)
 
-option(OMW_DEVELOP_BUILD "Enable building the development library" OFF)
-option(OMW_BUILD_DOCUMENTATION "Build the documentation of OMW using Doxygen" OFF)
+if (${CMAKE_CURRENT_SOURCE_DIR} EQUAL ${CMAKE_SOURCE_DIR})
+  set(OMW_STANDALONE ON)
+else()
+  set(OMW_STANDALONE OFF)
+endif()
+
+option(OMW_DEVELOP_BUILD "Enable building the development library" OMW_STANDALONE)
+option(OMW_BUILD_DOCUMENTATION "Build the documentation of OMW using Doxygen" OMW_DEVELOP_BUILD)
 
 # Sets standard options on libomw_* targets
 macro(set_shared_options target_name)
@@ -54,6 +60,8 @@ set_shared_options(omw_base)
 
 # Mathematica library
 if(Mathematica_FOUND)
+  set(OMW_MATHEMATICA_FOUND ON PARENT_SCOPE)
+
   add_library(omw_mathematica STATIC EXCLUDE_FROM_ALL
     ${OMW_SHARED_HEADERS}
     ${OMW_INCLUDE_DIR}/omw/mathematica.hpp
@@ -174,6 +182,8 @@ if(Mathematica_FOUND)
     endif()
   endfunction()
 else()
+  set(OMW_MATHEMATICA_FOUND OFF PARENT_SCOPE)
+
   # Helper function to create a Mathematica target, but Mathematica is not available
   function(omw_add_mathematica target_name)
     message(STATUS "Skipping Mathematica target ${target_name}")
@@ -182,6 +192,8 @@ endif()
 
 # Octave library
 if(Octave_FOUND OR OCTAVE_EXECUTABLE)
+  set(OMW_OCTAVE_FOUND ON PARENT_SCOPE)
+
   add_library(omw_octave STATIC EXCLUDE_FROM_ALL
     ${OMW_SHARED_HEADERS}
     ${OMW_INCLUDE_DIR}/omw/octave.hpp
@@ -249,6 +261,8 @@ if(Octave_FOUND OR OCTAVE_EXECUTABLE)
     endif()
   endfunction()
 else()
+  set(OMW_OCTAVE_FOUND OFF PARENT_SCOPE)
+
   # Helper function to create an Octave target, but Octave is not available
   function(omw_add_octave target_name)
     message(STATUS "Skipping Octave target ${target_name}")
