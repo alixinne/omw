@@ -60,7 +60,7 @@ set_shared_options(omw_base)
 
 # Mathematica library
 if(Mathematica_FOUND)
-  set(OMW_MATHEMATICA_FOUND ON PARENT_SCOPE)
+  set(OMW_MATHEMATICA_FOUND ON CACHE BOOL "Was Mathematica found for OMW" FORCE)
 
   add_library(omw_mathematica STATIC EXCLUDE_FROM_ALL
     ${OMW_SHARED_HEADERS}
@@ -182,7 +182,7 @@ if(Mathematica_FOUND)
     endif()
   endfunction()
 else()
-  set(OMW_MATHEMATICA_FOUND OFF PARENT_SCOPE)
+  set(OMW_MATHEMATICA_FOUND OFF CACHE BOOL "Was Mathematica found for OMW" FORCE)
 
   # Helper function to create a Mathematica target, but Mathematica is not available
   function(omw_add_mathematica target_name)
@@ -192,7 +192,7 @@ endif()
 
 # Octave library
 if(Octave_FOUND OR OCTAVE_EXECUTABLE)
-  set(OMW_OCTAVE_FOUND ON PARENT_SCOPE)
+  set(OMW_OCTAVE_FOUND ON CACHE BOOL "Was Octave found for OMW" FORCE)
 
   add_library(omw_octave STATIC EXCLUDE_FROM_ALL
     ${OMW_SHARED_HEADERS}
@@ -261,7 +261,7 @@ if(Octave_FOUND OR OCTAVE_EXECUTABLE)
     endif()
   endfunction()
 else()
-  set(OMW_OCTAVE_FOUND OFF PARENT_SCOPE)
+  set(OMW_OCTAVE_FOUND OFF CACHE BOOL "Was Octave found for OMW" FORCE)
 
   # Helper function to create an Octave target, but Octave is not available
   function(omw_add_octave target_name)
