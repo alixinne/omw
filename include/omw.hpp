@@ -14,6 +14,6 @@
 #include "omw/wrapper_base.hpp"
 
 #include "omw/mathematica.hpp"
-#include "omw/octave.hpp"
+#include "omw/octavew.hpp"
 
 #endif /* _OMW_HPP_ */

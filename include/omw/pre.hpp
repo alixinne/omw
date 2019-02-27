@@ -19,7 +19,7 @@ class mathematica;
 #endif
 
 #if OMW_OCTAVE
-class octave;
+class octavew;
 #endif
 }
 

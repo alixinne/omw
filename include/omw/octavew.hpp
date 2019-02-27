@@ -1,5 +1,5 @@
 /**
- * @file   omw/octave.hpp
+ * @file   omw/octavew.hpp
  * @brief  Definition of omw::matrix
  * @author Vincent TAVERNIER <vince.tavernier@gmail.com>
  * @date   2018
@@ -15,6 +15,9 @@
 #include <oct.h>
 #include <parse.h>
 
+#undef octave_stdout
+#define octave_stdout (::octave::pager_stream::stream ())
+
 #include "omw/pre.hpp"
 #include "omw/type_traits.hpp"
 
@@ -23,7 +26,7 @@ namespace omw
 /**
  * @brief Represents the interface wrapper for Mathematica (MathLink) code.
  */
-class octave : public wrapper_base<octave>
+class octavew : public wrapper_base<octavew>
 {
 	/// Current list of arguments
 	const octave_value_list *current_args_;
@@ -40,7 +43,7 @@ class octave : public wrapper_base<octave>
 	 * @param sym             Symbol to use for locating the containing .so/dll
 	 * @param userInitializer User initialization function.
 	 */
-	octave(void *sym, std::function<void(void)> userInitializer = std::function<void(void)>());
+	octavew(void *sym, std::function<void(void)> userInitializer = std::function<void(void)>());
 
 	/**
 	 * @brief Get the result object for the current function call.
@@ -85,14 +88,14 @@ class octave : public wrapper_base<octave>
 	{
 		protected:
 		/// Reference to the object that created this parameter reader
-		octave &w_;
+		octavew &w_;
 
 		/**
 		 * @brief Initializes a new instance of the ParamReaderBase class
 		 *
 		 * @param w Wrapper this instance is reading parameters from.
 		 */
-		param_reader_base(octave &w);
+		param_reader_base(octavew &w);
 
 		/**
 		 * @brief Ensures the current parameter matches the parameter requested by the caller.
@@ -122,7 +125,7 @@ class octave : public wrapper_base<octave>
 		 *
 		 * @param w Wrapper to read parameters from.
 		 */
-		param_reader(octave &w) : param_reader_base(w) {}
+		param_reader(octavew &w) : param_reader_base(w) {}
 
 		/**
 		 * @brief Attempts reading a parameter from the associated wrapper.
@@ -192,7 +195,7 @@ class octave : public wrapper_base<octave>
 		 *
 		 * @param w Wrapper to read parameters from.
 		 */
-		param_reader(octave &w) : param_reader_base(w) {}
+		param_reader(octavew &w) : param_reader_base(w) {}
 
 		/**
 		 * @brief Attempts reading a parameter from the associated wrapper.
@@ -228,7 +231,7 @@ class octave : public wrapper_base<octave>
 		 *
 		 * @param w Wrapper to read parameters from.
 		 */
-		param_reader(octave &w) : param_reader_base(w) {}
+		param_reader(octavew &w) : param_reader_base(w) {}
 
 		private:
 		/**
@@ -289,7 +292,7 @@ class octave : public wrapper_base<octave>
 		 *
 		 * @param w Wrapper to read parameters from.
 		 */
-		param_reader(octave &w) : param_reader_base(w) {}
+		param_reader(octavew &w) : param_reader_base(w) {}
 
 		private:
 		template <typename T>
@@ -347,7 +350,7 @@ class octave : public wrapper_base<octave>
 		 * @param first_idx First parameter index
 		 * @param name      Name of the tuples to read
 		 */
-		param_list_reader(octave &w, size_t first_idx, const std::string &name)
+		param_list_reader(octavew &w, size_t first_idx, const std::string &name)
 			: basic_param_list_reader<param_list_reader<Types...>, Types...>(w, first_idx, name)
 		{
 			basic_param_list_reader<param_list_reader<Types...>, Types...>::count_ =
@@ -364,7 +367,7 @@ class octave : public wrapper_base<octave>
 	 * @param fun Function to invoke when the link is ready.
 	 * @return Octave list of return values
 	 */
-	octave_value_list run_function(const octave_value_list &args, std::function<void(octave &)> fun);
+	octave_value_list run_function(const octave_value_list &args, std::function<void(octavew &)> fun);
 
 	/**
 	 * @brief Base class for wrapper result writers
@@ -373,14 +376,14 @@ class octave : public wrapper_base<octave>
 	{
 		protected:
 		/// Reference to the object that created this result writer
-		octave &w_;
+		octavew &w_;
 		
 		/**
 		 * @brief Initializes a new instance of the result_writer_base class
 		 *
 		 * @param w Wrapper this instance will write results to
 		 */
-		result_writer_base(octave &w);
+		result_writer_base(octavew &w);
 	};
 
 	/**
@@ -402,7 +405,7 @@ class octave : public wrapper_base<octave>
 		 *
 		 * @param w Wrapper to write the result to
 		 */
-		result_writer(octave &w) : result_writer_base(w) {}
+		result_writer(octavew &w) : result_writer_base(w) {}
 
 		/**
 		 * @brief Writes the result to the wrapper instance
@@ -427,7 +430,7 @@ class octave : public wrapper_base<octave>
 		 *
 		 * @param w Wrapper to read parameters from.
 		 */
-		result_writer(octave &w) : result_writer_base(w) {}
+		result_writer(octavew &w) : result_writer_base(w) {}
 
 		/**
 		 * @brief Writes the results to the wrapper instance
@@ -467,36 +470,36 @@ class octave : public wrapper_base<octave>
 };
 
 template <>
-bool octave::param_reader<bool>::try_read(size_t paramIdx, const std::string &paramName,
+bool octavew::param_reader<bool>::try_read(size_t paramIdx, const std::string &paramName,
 										  bool &success, bool getData);
 
 template <>
-int octave::param_reader<int>::try_read(size_t paramIdx, const std::string &paramName, bool &success, bool getData);
+int octavew::param_reader<int>::try_read(size_t paramIdx, const std::string &paramName, bool &success, bool getData);
 
 template <>
-unsigned int octave::param_reader<unsigned int>::try_read(size_t paramIdx, const std::string &paramName,
+unsigned int octavew::param_reader<unsigned int>::try_read(size_t paramIdx, const std::string &paramName,
 														  bool &success, bool getData);
 
 template <>
-float octave::param_reader<float>::try_read(size_t paramIdx, const std::string &paramName,
+float octavew::param_reader<float>::try_read(size_t paramIdx, const std::string &paramName,
 											bool &success, bool getData);
 
 template <>
-std::string octave::param_reader<std::string>::try_read(size_t paramIdx, const std::string &paramName,
+std::string octavew::param_reader<std::string>::try_read(size_t paramIdx, const std::string &paramName,
 														bool &success, bool getData);
 
 template <>
 std::shared_ptr<basic_array<float>>
-octave::param_reader<std::shared_ptr<basic_array<float>>>::try_read(size_t paramIdx, const std::string &paramName,
+octavew::param_reader<std::shared_ptr<basic_array<float>>>::try_read(size_t paramIdx, const std::string &paramName,
 																	bool &success, bool getData);
 
 template <>
 std::shared_ptr<basic_matrix<float>>
-octave::param_reader<std::shared_ptr<basic_matrix<float>>>::try_read(size_t paramIdx, const std::string &paramName,
+octavew::param_reader<std::shared_ptr<basic_matrix<float>>>::try_read(size_t paramIdx, const std::string &paramName,
 																	 bool &success, bool getData);
 
 template <>
-void octave::result_writer<std::shared_ptr<basic_matrix<float>>, void>::operator()(const std::shared_ptr<basic_matrix<float>> &result);
+void octavew::result_writer<std::shared_ptr<basic_matrix<float>>, void>::operator()(const std::shared_ptr<basic_matrix<float>> &result);
 }
 
 #define OM_RESULT_OCTAVE(w, code) (code)()

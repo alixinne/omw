@@ -5,14 +5,14 @@
 #include "omw/matrix.hpp"
 #include "omw/wrapper_base.hpp"
 
-#include "omw/octave.hpp"
+#include "omw/octavew.hpp"
 
 #if OMW_OCTAVE
 
 using namespace omw;
 
-octave::octave(void *sym, std::function<void(void)> userInitializer)
-: wrapper_base<octave>(std::forward<std::function<void(void)>>(userInitializer)), current_args_(),
+octavew::octavew(void *sym, std::function<void(void)> userInitializer)
+: wrapper_base<octavew>(std::forward<std::function<void(void)>>(userInitializer)), current_args_(),
   result_(), autoload_path_()
 {
 	if (sym)
@@ -23,14 +23,14 @@ octave::octave(void *sym, std::function<void(void)> userInitializer)
 	}
 }
 
-octave_value_list &octave::result()
+octave_value_list &octavew::result()
 {
 	if (result_stack_.empty())
 		return result_;
 	return *result_stack_.top();
 }
 
-void octave::push_result()
+void octavew::push_result()
 {
 	if (result_stack_.empty())
 	{
@@ -43,12 +43,12 @@ void octave::push_result()
 	}
 }
 
-void octave::pop_result()
+void octavew::pop_result()
 {
 	result_stack_.pop();
 }
 
-void octave::set_autoload(const std::string &name)
+void octavew::set_autoload(const std::string &name)
 {
 	if (autoload_path_.empty())
 		throw std::runtime_error("No autoload library has been specified in this wrapper instance");
@@ -57,12 +57,12 @@ void octave::set_autoload(const std::string &name)
 	args(0) = name;
 	args(1) = autoload_path_;
 
-	feval("autoload", args);
+	::octave::feval("autoload", args);
 }
 
-octave::param_reader_base::param_reader_base(octave &w) : w_(w) {}
+octavew::param_reader_base::param_reader_base(octavew &w) : w_(w) {}
 
-void octave::param_reader_base::check_parameter_idx(size_t paramIdx, const std::string &paramName)
+void octavew::param_reader_base::check_parameter_idx(size_t paramIdx, const std::string &paramName)
 {
 	if (size_t((*w_.current_args_).length()) <= paramIdx)
 	{
@@ -73,7 +73,7 @@ void octave::param_reader_base::check_parameter_idx(size_t paramIdx, const std::
 	}
 }
 
-octave_value_list octave::run_function(const octave_value_list &args, std::function<void(octave &)> fun)
+octave_value_list octavew::run_function(const octave_value_list &args, std::function<void(octavew &)> fun)
 {
 	try
 	{
@@ -91,22 +91,22 @@ octave_value_list octave::run_function(const octave_value_list &args, std::funct
 	return octave_value_list();
 }
 
-octave::result_writer_base::result_writer_base(octave &w)
+octavew::result_writer_base::result_writer_base(octavew &w)
 	: w_(w)
 {
 }
 
-void octave::send_failure(const std::string &exceptionMessage, const std::string &messageName)
+void octavew::send_failure(const std::string &exceptionMessage, const std::string &messageName)
 {
 	octave_stdout << messageName << ": " << exceptionMessage << std::endl;
 }
 
 template <>
-bool octave::param_reader<bool>::try_read(size_t paramIdx, const std::string &paramName, bool &success, bool getData)
+bool octavew::param_reader<bool>::try_read(size_t paramIdx, const std::string &paramName, bool &success, bool getData)
 {
 	check_parameter_idx(paramIdx, paramName);
 
-	if (!(*w_.current_args_)(paramIdx).is_bool_type())
+	if (!(*w_.current_args_)(paramIdx).islogical())
 	{
 		success = false;
 		return false;
@@ -116,7 +116,7 @@ bool octave::param_reader<bool>::try_read(size_t paramIdx, const std::string &pa
 }
 
 template <>
-int octave::param_reader<int>::try_read(size_t paramIdx, const std::string &paramName, bool &success, bool getData)
+int octavew::param_reader<int>::try_read(size_t paramIdx, const std::string &paramName, bool &success, bool getData)
 {
 	check_parameter_idx(paramIdx, paramName);
 
@@ -130,7 +130,7 @@ int octave::param_reader<int>::try_read(size_t paramIdx, const std::string &para
 }
 
 template <>
-unsigned int octave::param_reader<unsigned int>::try_read(size_t paramIdx, const std::string &paramName,
+unsigned int octavew::param_reader<unsigned int>::try_read(size_t paramIdx, const std::string &paramName,
 														  bool &success, bool getData)
 {
 	check_parameter_idx(paramIdx, paramName);
@@ -145,11 +145,11 @@ unsigned int octave::param_reader<unsigned int>::try_read(size_t paramIdx, const
 }
 
 template <>
-float octave::param_reader<float>::try_read(size_t paramIdx, const std::string &paramName, bool &success, bool getData)
+float octavew::param_reader<float>::try_read(size_t paramIdx, const std::string &paramName, bool &success, bool getData)
 {
 	check_parameter_idx(paramIdx, paramName);
 
-	if (!(*w_.current_args_)(paramIdx).is_numeric_type())
+	if (!(*w_.current_args_)(paramIdx).isnumeric())
 	{
 		success = false;
 		return 0.0f;
@@ -159,7 +159,7 @@ float octave::param_reader<float>::try_read(size_t paramIdx, const std::string &
 }
 
 template <>
-std::string octave::param_reader<std::string>::try_read(size_t paramIdx, const std::string &paramName,
+std::string octavew::param_reader<std::string>::try_read(size_t paramIdx, const std::string &paramName,
 														bool &success, bool getData)
 {
 	check_parameter_idx(paramIdx, paramName);
@@ -175,7 +175,7 @@ std::string octave::param_reader<std::string>::try_read(size_t paramIdx, const s
 
 template <>
 std::shared_ptr<basic_array<float>>
-octave::param_reader<std::shared_ptr<basic_array<float>>>::try_read(size_t paramIdx, const std::string &paramName,
+octavew::param_reader<std::shared_ptr<basic_array<float>>>::try_read(size_t paramIdx, const std::string &paramName,
 																	bool &success, bool getData)
 {
 	check_parameter_idx(paramIdx, paramName);
@@ -206,7 +206,7 @@ octave::param_reader<std::shared_ptr<basic_array<float>>>::try_read(size_t param
 
 template <>
 std::shared_ptr<basic_matrix<float>>
-octave::param_reader<std::shared_ptr<basic_matrix<float>>>::try_read(size_t paramIdx, const std::string &paramName,
+octavew::param_reader<std::shared_ptr<basic_matrix<float>>>::try_read(size_t paramIdx, const std::string &paramName,
 																	 bool &success, bool getData)
 {
 	check_parameter_idx(paramIdx, paramName);
@@ -224,7 +224,10 @@ octave::param_reader<std::shared_ptr<basic_matrix<float>>>::try_read(size_t para
 	if (!getData)
 		return {};
 
-	std::vector<int> dims{av.dim1(), av.dim2(), d == 3 ? av.dim3() : 1};
+	std::vector<int> dims{
+		static_cast<int>(av.dim1()),
+		static_cast<int>(av.dim2()),
+		static_cast<int>(d == 3 ? av.dim3() : 1)};
 	std::vector<float> f(dims[0] * dims[1] * dims[2]);
 
 	// Copy data
@@ -243,7 +246,7 @@ octave::param_reader<std::shared_ptr<basic_matrix<float>>>::try_read(size_t para
 }
 
 template <>
-void octave::result_writer<std::shared_ptr<basic_matrix<float>>, void>::operator()(const std::shared_ptr<basic_matrix<float>> &result)
+void octavew::result_writer<std::shared_ptr<basic_matrix<float>>, void>::operator()(const std::shared_ptr<basic_matrix<float>> &result)
 {
 	// Create the NDArray
 	auto dims(dim_vector(result->dims()[0], result->dims()[1], result->dims()[2]));

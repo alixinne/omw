@@ -58,7 +58,7 @@ template <typename TWrapper> void impl_omw_test_concat_pl(TWrapper &w)
 
 #if OMW_OCTAVE
 
-static omw::octave wrapper(reinterpret_cast<void *>(&impl_omw_test_times<omw::octave>));
+static omw::octavew wrapper(reinterpret_cast<void *>(&impl_omw_test_times<omw::octavew>));
 
 DEFUN_DLD(omw_tests, args, , "omw_tests() initializes the omw_test oct file")
 {
@@ -75,7 +75,7 @@ DEFUN_DLD(omw_tests, args, , "omw_tests() initializes the omw_test oct file")
 #define OM_DEFUN(name, oct_usage)                                    \
 	DEFUN_DLD(name, args, , oct_usage)                               \
 	{                                                                \
-		return wrapper.run_function(args, impl_##name<omw::octave>); \
+		return wrapper.run_function(args, impl_##name<omw::octavew>); \
 	}
 
 #endif /* OMW_OCTAVE */
