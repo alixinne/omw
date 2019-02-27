@@ -213,6 +213,14 @@ if(Octave_FOUND OR OCTAVE_EXECUTABLE)
   set(OCTAVE_OCT_FILE_DIR ${OCTAVE_OCT_FILE_DIR}
     CACHE PATH "Octave module destination directory" FORCE)
 
+  # We need to put some variables in the CMakeCache because
+  # omw_add_octave will be invoked from an outer scope
+  set(OCTAVE_VARIABLES OCTAVE_MAJOR_VERSION OCTAVE_MINOR_VERSION OCTAVE_PATCH_VERSION)
+  foreach(VAR_NAME ${OCTAVE_VARIABLES})
+    set(${VAR_NAME} ${${VAR_NAME}}
+      CACHE PATH "Octave ${VAR_NAME}" FORCE)
+  endforeach()
+
   # Helper function to create an Octave target
   function(omw_add_octave target_name)
     cmake_parse_arguments(OMW_ADD "USER_INSTALL" "INSTALL;OCT_NAME;TARGET_PACKAGE_DIR" "SOURCES;LINK_LIBRARIES;COMPILE_OPTIONS;COMPILE_DEFINITIONS" ${ARGN})
@@ -245,6 +253,10 @@ if(Octave_FOUND OR OCTAVE_EXECUTABLE)
 
     # Add compile definitions
     target_compile_definitions(${target_name} PRIVATE ${OMW_ADD_COMPILE_DEFINITIONS})
+    target_compile_definitions(${target_name} PUBLIC
+      OCTAVE_MAJOR_VERSION=${OCTAVE_MAJOR_VERSION}
+      OCTAVE_MINOR_VERSION=${OCTAVE_MINOR_VERSION}
+      OCTAVE_PATCH_VERSION=${OCTAVE_PATCH_VERSION})
 
     # Create install target if requested
     if(OMW_ADD_INSTALL)

@@ -57,7 +57,11 @@ void octavew::set_autoload(const std::string &name)
 	args(0) = name;
 	args(1) = autoload_path_;
 
+#if OCTAVE_440
 	::octave::feval("autoload", args);
+#else
+	feval("autoload", args);
+#endif
 }
 
 octavew::param_reader_base::param_reader_base(octavew &w) : w_(w) {}
@@ -106,7 +110,7 @@ bool octavew::param_reader<bool>::try_read(size_t paramIdx, const std::string &p
 {
 	check_parameter_idx(paramIdx, paramName);
 
-	if (!(*w_.current_args_)(paramIdx).islogical())
+	if (!(*w_.current_args_)(paramIdx). _OCTAVE_ISLOGICAL ())
 	{
 		success = false;
 		return false;
@@ -149,7 +153,7 @@ float octavew::param_reader<float>::try_read(size_t paramIdx, const std::string 
 {
 	check_parameter_idx(paramIdx, paramName);
 
-	if (!(*w_.current_args_)(paramIdx).isnumeric())
+	if (!(*w_.current_args_)(paramIdx). _OCTAVE_ISNUMERIC ())
 	{
 		success = false;
 		return 0.0f;
