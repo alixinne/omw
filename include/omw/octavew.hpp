@@ -15,8 +15,22 @@
 #include <oct.h>
 #include <parse.h>
 
+#if (OCTAVE_MAJOR_VERSION == 4 && OCTAVE_MINOR_VERSION >= 4) || OCTAVE_MAJOR_VERSION > 4
+#define OCTAVE_440 1
+#else
+#define OCTAVE_440 0
+#endif
+
+#if OCTAVE_440
 #undef octave_stdout
 #define octave_stdout (::octave::pager_stream::stream ())
+
+#define _OCTAVE_ISNUMERIC isnumeric
+#define _OCTAVE_ISLOGICAL islogical
+#else
+#define _OCTAVE_ISNUMERIC is_numeric_type
+#define _OCTAVE_ISLOGICAL is_bool_type
+#endif
 
 #include "omw/pre.hpp"
 #include "omw/type_traits.hpp"
