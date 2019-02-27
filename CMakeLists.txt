@@ -196,8 +196,8 @@ if(Octave_FOUND OR OCTAVE_EXECUTABLE)
 
   add_library(omw_octave STATIC EXCLUDE_FROM_ALL
     ${OMW_SHARED_HEADERS}
-    ${OMW_INCLUDE_DIR}/omw/octave.hpp
-    ${OMW_SRC_DIR}/octave.cpp
+    ${OMW_INCLUDE_DIR}/omw/octavew.hpp
+    ${OMW_SRC_DIR}/octavew.cpp
     $<TARGET_OBJECTS:omw_base>)
 
   target_compile_definitions(omw_octave PUBLIC
