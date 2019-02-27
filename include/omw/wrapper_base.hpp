@@ -144,7 +144,7 @@ class wrapper_base
 			template<bool tuple_reader_q = base_type::is_tuple_reader>
 			typename std::enable_if<tuple_reader_q, std::tuple<Types...>>::type operator*()
 			{
-				return reader_.w_.get_param<std::tuple<Types...>>(impl_type::sizeof_tuple * iterator_idx_ + reader_.first_idx_, reader_.name_);
+				return reader_.w_.template get_param<std::tuple<Types...>>(impl_type::sizeof_tuple * iterator_idx_ + reader_.first_idx_, reader_.name_);
 			}
 
 			/**
@@ -158,7 +158,7 @@ class wrapper_base
 			template<bool tuple_reader_q = base_type::is_tuple_reader>
 			typename std::enable_if<(!tuple_reader_q), std::tuple_element_t<0, std::tuple<Types...>>>::type operator*()
 			{
-				return reader_.w_.get_param<std::tuple_element_t<0, std::tuple<Types...>>>(impl_type::sizeof_tuple * iterator_idx_ + reader_.first_idx_, reader_.name_);
+				return reader_.w_.template get_param<std::tuple_element_t<0, std::tuple<Types...>>>(impl_type::sizeof_tuple * iterator_idx_ + reader_.first_idx_, reader_.name_);
 			}
 
 			/**
