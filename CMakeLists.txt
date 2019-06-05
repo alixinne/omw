@@ -39,13 +39,15 @@ endif()
 option(OMW_DEVELOP_BUILD "Enable building the development library" OMW_STANDALONE)
 option(OMW_BUILD_DOCUMENTATION "Build the documentation of OMW using Doxygen" OMW_DEVELOP_BUILD)
 
+option(OMW_CXX_STANDARD "C++ standard version to use" 14)
+
 # Sets standard options on libomw_* targets
 macro(set_shared_options target_name)
   target_include_directories(${target_name} PUBLIC ${OMW_INCLUDE_DIR})
 
   set_target_properties(${target_name} PROPERTIES
     POSITION_INDEPENDENT_CODE ON # -fPIC for .so
-    CXX_STANDARD 14              # C++14 required
+    CXX_STANDARD ${OMW_CXX_STANDARD}
   )
 
   # -Wall
@@ -115,8 +117,8 @@ if(Mathematica_FOUND)
       ${OMW_ADD_SOURCES}
       ${ML_MPREP_TARGETS})
 
-    # C++ 14 required
-    set_property(TARGET ${target_name} PROPERTY CXX_STANDARD 14)
+    # Set C++ standard
+    set_property(TARGET ${target_name} PROPERTY CXX_STANDARD ${OMW_CXX_STANDARD})
 
     # Add its link libraries
     target_link_libraries(${target_name} ${OMW_ADD_LINK_LIBRARIES} omw_mathematica)
@@ -245,8 +247,8 @@ if(Octave_FOUND OR OCTAVE_EXECUTABLE)
           ${PACKAGE_TARGET_DIR})
     endif()
 
-    # C++ 14 required
-    set_property(TARGET ${target_name} PROPERTY CXX_STANDARD 14)
+    # Set C++ standard
+    set_property(TARGET ${target_name} PROPERTY CXX_STANDARD ${OMW_CXX_STANDARD})
 
     # Add compile options
     target_compile_options(${target_name} PRIVATE ${OMW_ADD_COMPILE_OPTIONS})
