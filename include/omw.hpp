@@ -1,7 +1,7 @@
 /**
  * @file   omw.hpp
  * @brief  Main include for omw
- * @author Vincent TAVERNIER <vincent.tavernier@inria.fr>
+ * @author Alixinne <alixinne@pm.me>
  * @date   2018
  */
 

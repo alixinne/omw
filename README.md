@@ -10,7 +10,7 @@ libraries.
 
 ## Author
 
-Vincent Tavernier <vincent.tavernier@inria.fr>
+Alixinne <alixinne@pm.me>
 
 ```
 License: MIT

@@ -1,7 +1,7 @@
 /**
  * @file   omw/wrapper_base.hpp
  * @brief  Definition of omw::matrix
- * @author Vincent TAVERNIER <vincent.tavernier@inria.fr>
+ * @author Alixinne <alixinne@pm.me>
  * @date   2018
  */
 

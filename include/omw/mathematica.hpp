@@ -1,7 +1,7 @@
 /**
  * @file   omw/mathematica.hpp
  * @brief  Definition of omw::mathematica
- * @author Vincent TAVERNIER <vincent.tavernier@inria.fr>
+ * @author Alixinne <alixinne@pm.me>
  * @date   2018
  */
 

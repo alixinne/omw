@@ -1,7 +1,7 @@
 /**
  * @file   omw/pre.hpp
  * @brief  Predeclarations for omw
- * @author Vincent TAVERNIER <vincent.tavernier@inria.fr>
+ * @author Alixinne <alixinne@pm.me>
  * @date   2018
  */
 

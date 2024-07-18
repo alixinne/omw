@@ -1,7 +1,7 @@
 /**
  * @file   omw/type_traits.hpp
  * @brief  Definition of omw::is_simple_param_type
- * @author Vincent TAVERNIER <vincent.tavernier@inria.fr>
+ * @author Alixinne <alixinne@pm.me>
  * @date   2018
  */
 

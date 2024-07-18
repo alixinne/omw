@@ -1,7 +1,7 @@
 /**
  * @file   omw/mathematica/array.hpp
  * @brief  Definition of omw::mathematica_array
- * @author Vincent TAVERNIER <vincent.tavernier@inria.fr>
+ * @author Alixinne <alixinne@pm.me>
  * @date   2018
  */
 
